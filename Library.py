@@ -16,7 +16,7 @@ def exists(point: tuple, start: int = 0, end: int = 8) -> bool:
     return start <= point[0] < end and start <= point[1] < end
 
 
-def path(suffix: str) -> str:
+def image(suffix: str) -> str:
     return 'Figures/' + suffix + '.png'
 
 

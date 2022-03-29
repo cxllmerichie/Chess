@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QPixmap
-from Chess import Chess, Position
-from Library import exists, path
+from Chess import Chess, Position, MovementControl
+from Library import exists, image
 
 
 class Window(QWidget):
@@ -44,44 +44,48 @@ class Window(QWidget):
     # labels
     def create_chessboard_labels(self) -> list:
         background: list = []
-        for row in range(len(self.chess.chessboard)):
+        for y in range(len(self.chess.chessboard)):
             background.append([])
-            for col in range(len(self.chess.chessboard)):
-                background[row].append(
-                    self.new_label(row * 100, col * 100, 100, 100, 'gs' if (row + col) % 2 else 'ws'))
-                background[row][col].show()
+            for x in range(len(self.chess.chessboard)):
+                background[y].append(
+                    self.new_label(x * 100, y * 100, 100, 100, 'gs' if (y + x) % 2 else 'ws'))
+                background[y][x].show()
         return background
 
     def create_pieces_labels(self) -> list:
         pieces: list = []
-        for row in range(len(self.chess.chessboard)):
+        for y in range(len(self.chess.chessboard)):
             pieces.append([])
-            for col in range(len(self.chess.chessboard)):
-                pieces[row].append(QLabel(self))
-                if self.chess.chessboard[row][col] != '--':
-                    pieces[row][col] = self.new_label(col * 100, row * 100, 100, 100, self.chess.chessboard[row][col])
-                    pieces[row][col].show()
+            for x in range(len(self.chess.chessboard)):
+                pieces[y].append(QLabel(self))
+                if self.chess.chessboard[y][x] != '--':
+                    pieces[y][x] = self.new_label(x * 100, y * 100, 100, 100, self.chess.chessboard[y][x])
+                    pieces[y][x].show()
         return pieces
 
     def create_indicators(self, label: str) -> list:
         indicators: list = []
-        for row in range(len(self.chess.chessboard)):
+        for y in range(len(self.chess.chessboard)):
             indicators.append([])
-            for col in range(len(self.chess.chessboard)):
-                indicators[row].append(self.new_label(col * 100, row * 100, 100, 100, label))
-                indicators[row][col].hide()
+            for x in range(len(self.chess.chessboard)):
+                indicators[y].append(self.new_label(x * 100, y * 100, 100, 100, label))
+                indicators[y][x].hide()
         return indicators
 
     def new_label(self, x: int, y: int, width: int, height: int, img: str) -> QLabel:
         label = QLabel(self)
-        label.setPixmap(QPixmap(path(img)).scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        label.setPixmap(QPixmap(image(img)).scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         label.resize(width, height)
         label.move(x, y)
         return label
 
     # INDICATORS
     def fill_buffers(self) -> None:
-        for cell in Position(self.chess.chessboard, self.x1, self.y1, self.chess.chessboard[self.x1][self.y1]).move_set():
+        move_set: set = Position(self.chess.chessboard, self.x1, self.y1, self.chess.chessboard[self.x1][self.y1]).move_set()
+        print(move_set)
+        move_set = MovementControl().verify_move_to_avoid_check(self.x1, self.y1, move_set, self.chess.chessboard.copy())
+        print(move_set)
+        for cell in move_set:
             if exists(cell):
                 if self.chess.chessboard[cell[0]][cell[1]] == '--':
                     self.position_buffer.append(cell)

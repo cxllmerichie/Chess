@@ -1,4 +1,4 @@
-from Library import in_range, exists, opf, verify
+from Library import in_range, exists, opf, verify, line
 from string import ascii_lowercase
 
 
@@ -34,6 +34,12 @@ class Chess:
         for row in range(len(self.chessboard)):
             for col in range(len(self.chessboard)):
                 print(self.chessboard[row][col], end=" ")
+            print()
+
+    def print_coo(self):
+        for r in range(len(self.chessboard)):
+            for c in range(len(self.chessboard)):
+                print(r, c, sep="", end=" ")
             print()
 
     def print_cells(self):
@@ -156,3 +162,62 @@ class Position:
             if exists(point) and desk[point[0]][point[1]][0] != self.color:
                 ms.add((point[0], point[1]))
         return ms
+
+
+class MovementControl:
+    def __init__(self):
+        pass
+
+    def wms(self, chessboard: list):
+        _wms = set()
+        for r in range(len(chessboard)):
+            for c in range(len(chessboard)):
+                if chessboard[r][c][0] == 'w':
+                    _wms.update(Position(chessboard, r, c, chessboard[r][c]).move_set())
+        return _wms
+
+    def bms(self, chessboard: list):
+        _bms = set()
+        for r in range(len(chessboard)):
+            for c in range(len(chessboard)):
+                if chessboard[r][c][0] == 'b':
+                    _bms.update(Position(chessboard, r, c, chessboard[r][c]).move_set())
+        return _bms
+
+    def print_board(self, chessboard: list):
+        for r in range(len(chessboard)):
+            for c in range(len(chessboard)):
+                print(chessboard[r][c], end=" ")
+            print()
+
+    def pos(self, piece, chessboard: list):
+        for r in range(len(chessboard)):
+            for c in range(len(chessboard)):
+                if chessboard[r][c] == piece:
+                    return r, c
+        return -1, -1
+
+    def check(self, color: str, chessboard: list) -> bool:
+        print('Check on ', color, 'K ', (self.pos(color + 'K', chessboard) in (self.bms(chessboard) if color == 'w' else self.wms(chessboard))), sep='')
+        return self.pos(color + 'K', chessboard) in (self.bms(chessboard) if color == 'w' else self.wms(chessboard))
+
+    def allowed(self, x1, y1, x2, y2, chessboard: list):
+        chessboard[x1][y1], chessboard[x2][y2] = chessboard[x2][y2], chessboard[x1][y1]
+
+    def verify_move_to_avoid_check(self, x, y, ms: set, chessboard: list):
+        vms = set()
+        test_desk: list = chessboard
+        for move in ms:
+            p1, p2 = test_desk[x][y], test_desk[move[0]][move[1]]
+            if p2 == '--':
+                test_desk[x][y], test_desk[move[0]][move[1]] = test_desk[move[0]][move[1]], test_desk[x][y]
+            else:
+                test_desk[move[0]][move[1]] = test_desk[x][y]
+                test_desk[x][y] = '--'
+            self.print_board(test_desk)
+            if not self.check(test_desk[move[0]][move[1]][0], chessboard):
+                vms.add(move)
+            test_desk[x][y], test_desk[move[0]][move[1]] = p1, p2
+        print(line(50))
+
+        return vms
