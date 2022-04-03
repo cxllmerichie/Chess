@@ -1,6 +1,5 @@
 import operator
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 
 def opf(v1, v2, _operator: str):

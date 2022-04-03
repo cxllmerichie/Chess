@@ -1,4 +1,4 @@
-from Library import in_range, exists, opf, verify, line
+from Library import in_range, exists, opf, verify
 from string import ascii_lowercase
 
 
@@ -92,7 +92,7 @@ class Position:
                     ms.add((opf(self.x, 1, op), self.y + 1))
         if in_range(opf(self.x, 2, op)):
             if self.x == 6 or self.x == 1:
-                if desk[opf(self.x, 2, op)][self.y] == '--':
+                if desk[opf(self.x, 2, op)][self.y] == '--' and desk[opf(self.x, 1, op)][self.y] == '--':
                     ms.add((opf(self.x, 2, op), self.y))
         return ms
 
@@ -165,8 +165,18 @@ class Position:
 
 
 class MovementControl:
-    def __init__(self):
-        pass
+    def zero_moves(self, color: str, chessboard: list):
+        return len(self.ams(color, chessboard)) == 0
+
+    def ams(self, color: str, chessboard: list):
+        _ams = set()
+        for r in range(len(chessboard)):
+            for c in range(len(chessboard)):
+                if chessboard[r][c][0] == color:
+                    tmp: set = Position(chessboard, r, c, chessboard[r][c]).move_set()
+                    tmp = self.verify_move_to_avoid_check(r, c, tmp, chessboard)
+                    _ams.update(tmp)
+        return _ams
 
     def wms(self, chessboard: list):
         _wms = set()
@@ -198,11 +208,7 @@ class MovementControl:
         return -1, -1
 
     def check(self, color: str, chessboard: list) -> bool:
-        print('Check on ', color, 'K ', (self.pos(color + 'K', chessboard) in (self.bms(chessboard) if color == 'w' else self.wms(chessboard))), sep='')
         return self.pos(color + 'K', chessboard) in (self.bms(chessboard) if color == 'w' else self.wms(chessboard))
-
-    def allowed(self, x1, y1, x2, y2, chessboard: list):
-        chessboard[x1][y1], chessboard[x2][y2] = chessboard[x2][y2], chessboard[x1][y1]
 
     def verify_move_to_avoid_check(self, x, y, ms: set, chessboard: list):
         vms = set()
@@ -214,10 +220,8 @@ class MovementControl:
             else:
                 test_desk[move[0]][move[1]] = test_desk[x][y]
                 test_desk[x][y] = '--'
-            self.print_board(test_desk)
             if not self.check(test_desk[move[0]][move[1]][0], chessboard):
                 vms.add(move)
             test_desk[x][y], test_desk[move[0]][move[1]] = p1, p2
-        print(line(50))
 
         return vms

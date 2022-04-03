@@ -22,6 +22,8 @@ class Window(QWidget):
         self.position_indicators: list = self.create_indicators('gd')
         self.check_indicators: list = self.create_indicators('rc')
         self.pick_indicators: list = self.create_indicators('ys')
+        self.checkmate_indicators: list = self.create_indicators('rs')
+        self.stalemate_indicators: list = self.create_indicators('os')
         self.pieces_labels: list = self.create_pieces_labels()
         self.hit_indicators: list = self.create_indicators('gc')
 
@@ -40,6 +42,9 @@ class Window(QWidget):
                 self.x2, self.y2 = self.move_buffer[1][0], self.move_buffer[1][1]
                 self.move_action()
                 self.hide_indicators()
+        self.check()
+        self.checkmate()
+        self.stalemate()
 
     # labels
     def create_chessboard_labels(self) -> list:
@@ -82,9 +87,7 @@ class Window(QWidget):
     # INDICATORS
     def fill_buffers(self) -> None:
         move_set: set = Position(self.chess.chessboard, self.x1, self.y1, self.chess.chessboard[self.x1][self.y1]).move_set()
-        print(move_set)
         move_set = MovementControl().verify_move_to_avoid_check(self.x1, self.y1, move_set, self.chess.chessboard.copy())
-        print(move_set)
         for cell in move_set:
             if exists(cell):
                 if self.chess.chessboard[cell[0]][cell[1]] == '--':
@@ -178,3 +181,44 @@ class Window(QWidget):
             self.chess.square_names[self.x1][self.y1] + '->' +
             self.chess.square_names[self.x2][self.y2] + '\n'
         )
+
+    # END-GAME procedures
+    def check(self):
+        if MovementControl().check('w', self.chess.chessboard) and len(self.check_buffer) != 2:
+            self.check_buffer.append(self.chess.pos('wK')[0])
+            self.check_buffer.append(self.chess.pos('wK')[1])
+            self.show_check_indicator()
+        elif MovementControl().check('b', self.chess.chessboard) and len(self.check_buffer) != 2:
+            self.check_buffer.append(self.chess.pos('bK')[0])
+            self.check_buffer.append(self.chess.pos('bK')[1])
+            self.show_check_indicator()
+        else:
+            self.hide_check_indicator()
+
+    def checkmate(self):
+        if MovementControl().zero_moves('w', self.chess.chessboard):
+            if MovementControl().check('w', self.chess.chessboard):
+                self.checkmate_indicators[self.chess.pos('wK')[0]][self.chess.pos('wK')[1]].show()
+        elif MovementControl().zero_moves('b', self.chess.chessboard):
+            if MovementControl().check('b', self.chess.chessboard):
+                self.checkmate_indicators[self.chess.pos('bK')[0]][self.chess.pos('bK')[1]].show()
+
+    def stalemate(self):
+        if MovementControl().zero_moves('b', self.chess.chessboard):
+            if not MovementControl().check('b', self.chess.chessboard):
+                for r in range(len(self.chess.chessboard)):
+                    for c in range(len(self.chess.chessboard)):
+                        if self.chess.chessboard[r][c][0] == 'b':
+                            if self.chess.chessboard[r][c][1] == 'K':
+                                self.checkmate_indicators[r][c].show()
+                            else:
+                                self.stalemate_indicators[r][c].show()
+        elif MovementControl().zero_moves('w', self.chess.chessboard):
+            if not MovementControl().check('w', self.chess.chessboard):
+                for r in range(len(self.chess.chessboard)):
+                    for c in range(len(self.chess.chessboard)):
+                        if self.chess.chessboard[r][c][0] == 'w':
+                            if self.chess.chessboard[r][c][1] == 'K':
+                                self.checkmate_indicators[r][c].show()
+                            else:
+                                self.stalemate_indicators[r][c].show()
