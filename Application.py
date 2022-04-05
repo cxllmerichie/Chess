@@ -76,7 +76,7 @@ class Window(QWidget):
         if piece[1] == 'p':
             if (piece[0] == 'w' and pos[0] == 0) or (piece[0] == 'b' and pos[0] == 7):
                 self.enable_mouse_click = False
-                Promotion(piece[0], self, pos[1])
+                Promotion(self, pos, piece)
 
     def is_capture(self) -> None:
         if self.chess.chessboard[x2][y2] != '--':
@@ -149,27 +149,34 @@ class Window(QWidget):
 
 
 class Promotion(QWidget):
-    def __init__(self, color: str, window: QWidget, column: int = 0):
-        self.window_link: QWidget = window
-        super(Promotion, self).__init__(self.window_link)
+    def __init__(self, _window: QWidget, position: tuple, piece: str):
+        self.window: QWidget = _window
+        self.color: str = piece[0]
+        self.x = position[0]
+        self.y = position[1]
+        super(Promotion, self).__init__(self.window)
 
-        w_case: list = [(0, 'Q'), (100, 'R'), (200, 'N'), (300, 'B')]
-        b_case: list = [(0, 'B'), (100, 'N'), (200, 'R'), (300, 'Q')]
-        for _tuple in (w_case if color == 'w' else b_case):
+        self.case: list = [(0, 'Q'), (100, 'R'), (200, 'N'), (300, 'B')] if self.color == 'w' else [(0, 'B'), (100, 'N'), (200, 'R'), (300, 'Q')]
+        for _tuple in self.case:
             new_label(0, _tuple[0], 100, 100, 'grs', self).show()
-            new_label(0, _tuple[0], 100, 100, color + _tuple[1], self).show()
+            new_label(0, _tuple[0], 100, 100, self.color + _tuple[1], self).show()
 
-        self.move(column * 100, 0) if color == 'w' else self.move(column*100, 400)
+        self.move(self.y * 100, 0) if self.color == 'w' else self.move(self.y * 100, 400)
         self.setFixedSize(QSize(100, 400))
         self.setWindowFlag(Qt.FramelessWindowHint)
         self.show()
 
     def mousePressEvent(self, click):
-        self.window_link.enable_mouse_click = True
+        self.window.enable_mouse_click = True
+        piece: str = self.color + self.case[click.y() // 100][1]
+        self.promotional_replacement(piece)
         self.hide()
 
-    def promotional_replacement(self):
-        pass
+    def promotional_replacement(self, _piece: str):
+        self.window.chess.chessboard[self.x][self.y] = _piece
+        self.window.label.pieces[self.x][self.y].hide()
+        self.window.label.pieces[self.x][self.y] = new_label(self.y * 100, self.x * 100, 100, 100, _piece, self.window)
+        self.window.label.pieces[self.x][self.y].show()
 
 
 class Label:
