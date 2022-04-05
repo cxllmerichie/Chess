@@ -54,7 +54,7 @@ class Window(QWidget):
                 elif self.chess.chessboard[cell[0]][cell[1]][1] == 'K':
                     check_buffer = list(cell)
 
-    # figure move
+    # piece move
     def move_action(self) -> None:
         if (x2, y2) in position_buffer or (x2, y2) in capture_buffer:
             self.is_capture()

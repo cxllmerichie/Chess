@@ -16,7 +16,7 @@ def exists(point: tuple, start: int = 0, end: int = 8) -> bool:
 
 
 def image(suffix: str) -> str:
-    return 'Figures/' + suffix + '.png'
+    return 'Images/' + suffix + '.png'
 
 
 def time() -> str:
