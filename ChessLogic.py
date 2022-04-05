@@ -21,7 +21,7 @@ class Chess:
         for row in range(1, 9, 1):
             square_names.append([])
             for letter in ascii_lowercase:
-                square_names[row-1].append(letter+str(8-row+1))
+                square_names[row-1].append(letter+str(9-row))
         return square_names
 
     def pos(self, piece: str) -> tuple:

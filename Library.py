@@ -3,6 +3,10 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 from datetime import datetime, timedelta
 import operator
+from typing import Final
+
+# label size
+LS: Final = 80
 
 
 def opf(v1, v2, _operator: str):
@@ -48,7 +52,7 @@ def verify(_set: set) -> set:
 
 def new_label(x: int, y: int, width: int, height: int, img: str, window: QWidget) -> QLabel:
     label = QLabel(parent=window)
-    label.setPixmap(QPixmap(image(img)).scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+    label.setPixmap(QPixmap(image(img)).scaled(LS, LS, Qt.KeepAspectRatio, Qt.SmoothTransformation))
     label.resize(width, height)
     label.move(x, y)
     return label

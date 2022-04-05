@@ -1,6 +1,9 @@
 # ToDo: player1 & player2 control (sequence 1,2,1,2,1,2...)
 # ToDo: king+rook swap
-# ToDo: pawn->queen promotion
+# ToDo: AI algorithm
+# ToDo: multiplayer protocol
+# ToDo: vocal assistant
+# ToDo: fix refactor check/checkmate/stalemate
 
 from PyQt5.QtWidgets import QApplication
 from Application import Window
