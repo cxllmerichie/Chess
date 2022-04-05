@@ -1,8 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QLabel
-from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QPixmap
-from Chess import Chess, Position
-from Library import exists, image
+from PyQt5.QtCore import QSize, Qt, QEvent
+from ChessLogic import Chess, Position
+from Library import exists, new_label
 
 turn: int = 0
 x1 = y1 = x2 = y2 = 0
@@ -13,16 +12,18 @@ capture_buffer: list = []
 
 
 class Window(QWidget):
+    enable_mouse_click: bool = True
+
     def __init__(self, log_file):
         super(Window, self).__init__()
         self.chess = Chess()
         self.label = Label(self, self.chess)
+        self.log_file = log_file
 
         self.setFixedSize(QSize(800, 800))
         self.setWindowTitle('Chess')
+        # self.move(200, 200)
         self.show()
-
-        self.log_file = log_file
 
     # user interaction
     def mousePressEvent(self, click) -> None:
@@ -39,6 +40,13 @@ class Window(QWidget):
         self.check()
         self.checkmate()
         self.stalemate()
+
+    def eventFilter(self, obj, event):
+        if not self.enable_mouse_click:
+            if event.type() in (QEvent.MouseButtonPress, QEvent.MouseButtonDblClick):
+                if event.button() == Qt.LeftButton:
+                    return True
+        return super(Window, self).eventFilter(obj, event)
 
     # INDICATORS
     def fill_buffers(self) -> None:
@@ -58,10 +66,17 @@ class Window(QWidget):
     def move_action(self) -> None:
         if (x2, y2) in position_buffer or (x2, y2) in capture_buffer:
             self.is_capture()
+            self.is_promotion(self.chess.chessboard[x1][y1], (x2, y2))
             self.move_piece()
             self.update_log()
         else:
             move_buffer.clear()
+
+    def is_promotion(self, piece: str, pos: tuple):
+        if piece[1] == 'p':
+            if (piece[0] == 'w' and pos[0] == 0) or (piece[0] == 'b' and pos[0] == 7):
+                self.enable_mouse_click = False
+                Promotion(piece[0], self, pos[1])
 
     def is_capture(self) -> None:
         if self.chess.chessboard[x2][y2] != '--':
@@ -133,56 +148,76 @@ class Window(QWidget):
         self.stalemate_for('b')
 
 
+class Promotion(QWidget):
+    def __init__(self, color: str, window: QWidget, column: int = 0):
+        self.window_link: QWidget = window
+        super(Promotion, self).__init__(self.window_link)
+
+        w_case: list = [(0, 'Q'), (100, 'R'), (200, 'N'), (300, 'B')]
+        b_case: list = [(0, 'B'), (100, 'N'), (200, 'R'), (300, 'Q')]
+        for _tuple in (w_case if color == 'w' else b_case):
+            new_label(0, _tuple[0], 100, 100, 'grs', self).show()
+            new_label(0, _tuple[0], 100, 100, color + _tuple[1], self).show()
+
+        self.move(column * 100, 0) if color == 'w' else self.move(column*100, 400)
+        self.setFixedSize(QSize(100, 400))
+        self.setWindowFlag(Qt.FramelessWindowHint)
+        self.show()
+
+    def mousePressEvent(self, click):
+        self.window_link.enable_mouse_click = True
+        self.hide()
+
+    def promotional_replacement(self):
+        pass
+
+
 class Label:
-    def __init__(self, window: QWidget, chess: Chess):
+    def __init__(self, window: QWidget, chess: Chess = None):
         self.background: list = self.create_background(window, chess)
         self.position: list = self.create_indicators('gd', window, chess)
         self.check: list = self.create_indicators('rc', window, chess)
         self.choice: list = self.create_indicators('ys', window, chess)
         self.checkmate: list = self.create_indicators('rs', window, chess)
         self.stalemate: list = self.create_indicators('os', window, chess)
-        self.pieces: list = self.create_pieces(window, chess)
         self.capture: list = self.create_indicators('gc', window, chess)
+        self.pieces: list = self.create_pieces(window, chess)
 
     # labels
-    def create_background(self, window: QWidget, chess: Chess) -> list:
+    @staticmethod
+    def create_background(window: QWidget, chess: Chess) -> list:
         _background: list = []
         for y in range(len(chess.chessboard)):
             _background.append([])
             for x in range(len(chess.chessboard)):
                 _background[y].append(
-                    self.new_label(x * 100, y * 100, 100, 100, 'gs' if (y + x) % 2 else 'ws', window))
+                    new_label(x * 100, y * 100, 100, 100, 'gs' if (y + x) % 2 else 'ws', window))
                 _background[y][x].show()
         return _background
 
-    def create_pieces(self, window: QWidget, chess: Chess) -> list:
+    @staticmethod
+    def create_pieces(window: QWidget, chess: Chess) -> list:
         _pieces: list = []
         for y in range(len(chess.chessboard)):
             _pieces.append([])
             for x in range(len(chess.chessboard)):
                 _pieces[y].append(QLabel(parent=window))
                 if chess.chessboard[y][x] != '--':
-                    _pieces[y][x] = self.new_label(x * 100, y * 100, 100, 100, chess.chessboard[y][x], window)
+                    _pieces[y][x] = new_label(x * 100, y * 100, 100, 100, chess.chessboard[y][x], window)
                     _pieces[y][x].show()
         return _pieces
 
-    def create_indicators(self, label: str, window: QWidget, chess: Chess) -> list:
+    @staticmethod
+    def create_indicators(label: str, window: QWidget, chess: Chess) -> list:
         indicators: list = []
         for y in range(len(chess.chessboard)):
             indicators.append([])
             for x in range(len(chess.chessboard)):
-                indicators[y].append(self.new_label(x * 100, y * 100, 100, 100, label, window))
+                indicators[y].append(new_label(x * 100, y * 100, 100, 100, label, window))
                 indicators[y][x].hide()
         return indicators
 
-    @staticmethod
-    def new_label(x: int, y: int, width: int, height: int, img: str, window: QWidget) -> QLabel:
-        label = QLabel(parent=window)
-        label.setPixmap(QPixmap(image(img)).scaled(100, 100, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        label.resize(width, height)
-        label.move(x, y)
-        return label
-
+    # SHOW/HIDE all indicators
     def show_indicators(self) -> None:
         self.show_choice()
         self.show_position()
@@ -195,7 +230,7 @@ class Label:
         self.hide_capture()
         self.hide_check()
 
-    # PICK indicator
+    # CHOICE indicator
     def show_choice(self) -> None:
         self.choice[x1][y1].show()
 
