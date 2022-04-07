@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import QSize, Qt, QEvent
-from ChessLogic import Chess, Position
+from ChessLogic import Chess
 from Library import exists, new_label, LS
 
 turn: int = 0
@@ -27,6 +27,7 @@ class Window(QWidget):
 
     # user interaction
     def mousePressEvent(self, click) -> None:
+        self.chess.print_position()
         global x1, x2, y1, y2, move_buffer
         if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // LS][click.x() // LS] == '--'):
             move_buffer.append([click.y() // LS, click.x() // LS])
@@ -37,9 +38,9 @@ class Window(QWidget):
                 x2, y2 = move_buffer[1][0], move_buffer[1][1]
                 self.move_action()
                 self.label.hide_indicators()
-        self.check()
-        if self.checkmate() or self.stalemate():
-            self.enable_mouse_click = False
+                self.check()
+                if self.checkmate() or self.stalemate():
+                    self.enable_mouse_click = False
 
     def eventFilter(self, obj, event) -> bool:
         if not self.enable_mouse_click:
@@ -51,9 +52,7 @@ class Window(QWidget):
     # INDICATORS
     def fill_buffers(self) -> None:
         global check_buffer, x1, x1
-        move_set: set = Position(self.chess.chessboard, x1, y1, self.chess.chessboard[x1][y1]).move_set()
-        move_set = self.chess.verify_position(x1, y1, move_set, self.chess.chessboard.copy())
-        for cell in move_set:
+        for cell in self.chess.move_set(x1, y1):
             if exists(cell):
                 if self.chess.chessboard[cell[0]][cell[1]] == '--':
                     position_buffer.append(cell)
@@ -138,10 +137,7 @@ class Window(QWidget):
                 for r in range(len(self.chess.chessboard)):
                     for c in range(len(self.chess.chessboard)):
                         if self.chess.chessboard[r][c][0] == color:
-                            if self.chess.chessboard[r][c][1] == 'K':
-                                self.label.checkmate[r][c].show()
-                            else:
-                                self.label.stalemate[r][c].show()
+                            self.label.stalemate[r][c].show()
                             return True
         return False
 
@@ -180,6 +176,9 @@ class Promotion(QWidget):
         self.window.label.pieces[self.x][self.y].hide()
         self.window.label.pieces[self.x][self.y] = new_label(self.y * LS, self.x * LS, LS, LS, _piece, self.window)
         self.window.label.pieces[self.x][self.y].show()
+        self.window.check()
+        if self.window.checkmate() or self.window.stalemate():
+            self.window.enable_mouse_click = False
 
 
 class Label:
