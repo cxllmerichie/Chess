@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import QSize, Qt, QEvent, QUrl
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from ChessLogic import Chess
-from Library import exists, new_label, S, sound
+from Library import S, exists, new_label, sound
 
 turn: int = 0
 x1 = y1 = x2 = y2 = 0
@@ -18,6 +18,7 @@ class Window(QWidget):
     def __init__(self, log_file):
         super(Window, self).__init__()
         self.player = QMediaPlayer()
+        self.sound: str = ''
 
         self.chess = Chess()
         self.label = Label(self, self.chess)
@@ -37,11 +38,13 @@ class Window(QWidget):
             self.label.show_indicators()
             if len(move_buffer) == 2:
                 x2, y2 = move_buffer[1][0], move_buffer[1][1]
-                self.move_action()
+                is_moved: bool = self.move_action()
                 self.label.hide_indicators()
                 self.check()
                 if self.checkmate() or self.stalemate():
                     self.enable_mouse_click = False
+                if is_moved:
+                    self.play_sound(self.sound)
 
     def eventFilter(self, obj, event) -> bool:
         if not self.enable_mouse_click:
@@ -63,26 +66,31 @@ class Window(QWidget):
                     check_buffer = list(cell)
 
     # piece move
-    def move_action(self) -> None:
+    def move_action(self) -> bool:
         if (x2, y2) in position_buffer or (x2, y2) in capture_buffer:
+            self.sound = 'move'
             self.is_castling()
             self.is_capture()
             self.is_promotion()
             self.move_piece()
             self.update_log()
+            return True
         else:
             move_buffer.clear()
+            return False
 
     def is_promotion(self):
         if self.chess.chessboard[x1][y1][1] == 'p':
             if (self.chess.chessboard[x1][y1][0] == 'w' and x2 == 0) or (self.chess.chessboard[x1][y1][0] == 'b' and x2 == 7):
                 self.enable_mouse_click = False
                 Promotion(self, (x2, y2), self.chess.chessboard[x1][y1])
+                self.sound = 'castling'
 
     def is_capture(self) -> None:
         if self.chess.chessboard[x2][y2] != '--':
             self.label.pieces[x2][y2].hide()
             self.chess.chessboard[x2][y2] = '--'
+            self.sound = 'capture'
 
     def is_castling(self) -> None:
         rp, ep = [], []
@@ -104,6 +112,7 @@ class Window(QWidget):
             self.chess.chessboard[ep[0]][ep[1]], self.chess.chessboard[rp[0]][rp[1]] = self.chess.chessboard[rp[0]][rp[1]], self.chess.chessboard[ep[0]][ep[1]]
             self.label.pieces[ep[0]][ep[1]], self.label.pieces[rp[0]][rp[1]] = self.label.pieces[rp[0]][rp[1]], self.label.pieces[ep[0]][ep[1]]
             self.label.pieces[ep[0]][ep[1]].move(ep[1] * S, ep[0] * S)
+            self.sound = 'castling'
 
     def move_piece(self) -> None:
         self.chess.chessboard[x2][y2], self.chess.chessboard[x1][y1] = self.chess.chessboard[x1][y1], self.chess.chessboard[x2][y2]
@@ -114,7 +123,6 @@ class Window(QWidget):
         self.label.pieces[x2][y2].move(y2 * S, x2 * S)
         self.label.hide_position()
         move_buffer.clear()
-        self.play_sound('move')
 
     def play_sound(self, action: str):
         self.player.setMedia(QMediaContent(QUrl.fromLocalFile(sound(action))))
@@ -137,7 +145,7 @@ class Window(QWidget):
         check_buffer.append(position[0])
         check_buffer.append(position[1])
         self.label.show_check()
-        self.play_sound('check')
+        self.sound = 'check'
 
     def check(self) -> None:
         if self.chess.check('w') and len(check_buffer) != 2:
@@ -151,10 +159,12 @@ class Window(QWidget):
         if self.chess.no_position('w'):
             if self.chess.check('w'):
                 self.label.checkmate[self.chess.pos('wK')[0]][self.chess.pos('wK')[1]].show()
+                self.sound = 'check'
                 return True
         elif self.chess.no_position('b'):
             if self.chess.check('b'):
                 self.label.checkmate[self.chess.pos('bK')[0]][self.chess.pos('bK')[1]].show()
+                self.sound = 'check'
                 return True
         return False
 
@@ -165,6 +175,7 @@ class Window(QWidget):
                     for c in range(len(self.chess.chessboard)):
                         if self.chess.chessboard[r][c][0] == color:
                             self.label.stalemate[r][c].show()
+                self.sound = 'check'
                 return True
         return False
 

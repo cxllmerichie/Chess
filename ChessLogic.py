@@ -182,7 +182,7 @@ class Position:
         ms = set()
         tmp = [('+', '+'), ('-', '+'), ('+', '-'), ('-', '-')]
         for op in tmp:
-            for c in range(1, 7, 1):
+            for c in range(1, 8, 1):
                 x, y = opf(self.x, c, op[0]), opf(self.y, c, op[1])
                 if x < 8 and y < 8:
                     if self.chessboard[x][y][0] == self.color:
