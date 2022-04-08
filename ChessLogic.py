@@ -50,24 +50,8 @@ class Chess:
                     ms.update(Position(self.chessboard, r, c).move_set())
         return ms
 
-    def wms(self) -> set:
-        _wms = set()
-        for r in range(len(self.chessboard)):
-            for c in range(len(self.chessboard)):
-                if self.chessboard[r][c][0] == 'w':
-                    _wms.update(Position(self.chessboard, r, c).move_set())
-        return _wms
-
-    def bms(self) -> set:
-        _bms = set()
-        for r in range(len(self.chessboard)):
-            for c in range(len(self.chessboard)):
-                if self.chessboard[r][c][0] == 'b':
-                    _bms.update(Position(self.chessboard, r, c).move_set())
-        return _bms
-
     def check(self, color: str) -> bool:
-        return self.pos(color + 'K') in (self.bms() if color == 'w' else self.wms())
+        return self.pos(color + 'K') in (self.cms('b') if color == 'w' else self.cms('w'))
 
     def evade_the_check(self, x, y, ms: set):
         vms = set()
@@ -98,7 +82,7 @@ class Chess:
     def move_set(self, x: int, y: int) -> set:
         move_set: set = Position(self.chessboard, x, y).move_set()
         move_set = self.evade_the_check(x, y, move_set)
-        self.castling.update_castling(self.chessboard, self.bms(), self.wms())
+        self.castling.update_castling(self.chessboard, self.cms)
         if self.chessboard[x][y] == 'wK':
             if self.castling.through(self.castling.long_w):
                 move_set.add((7, 2))
@@ -238,12 +222,16 @@ class Castling:
     def dangerous_white_pos(self, bms: set):
         # wK goes through dangerous pos
         self.long_w[3] = False if (7, 3) in bms else True
+        self.long_w[3] = False if (7, 2) in bms else True
         self.short_w[3] = False if (7, 5) in bms else True
+        self.short_w[3] = False if (7, 6) in bms else True
 
     def dangerous_black_pos(self, wms: set):
         # bK goes through dangerous pos
         self.long_b[3] = False if (0, 3) in wms else True
+        self.long_b[3] = False if (0, 2) in wms else True
         self.short_b[3] = False if (0, 5) in wms else True
+        self.short_b[3] = False if (0, 6) in wms else True
 
     def way_is_clear(self, chessboard: list):
         # long white
@@ -253,7 +241,9 @@ class Castling:
                 self.long_w[2] = False
                 break
         # short white
+        print("NEW")
         for c in range(5, 7, 1):
+            print(7, c)
             self.short_w[2] = True
             if chessboard[7][c] != '--':
                 self.short_w[2] = False
@@ -287,10 +277,10 @@ class Castling:
             self.long_w[1] = False
             self.short_w[1] = False
 
-    def update_castling(self, chessboard: list, bms: set, wms: set):
+    def update_castling(self, chessboard: list, cms):
         self.way_is_clear(chessboard)
-        self.dangerous_white_pos(bms)
-        self.dangerous_black_pos(wms)
+        self.dangerous_white_pos(cms('b'))
+        self.dangerous_black_pos(cms('w'))
         self.moved_guy(chessboard)
 
     @staticmethod

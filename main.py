@@ -10,6 +10,7 @@ from Library import time, date, line, duration
 from timeit import default_timer
 from sys import argv
 
+
 if __name__ == '__main__':
     file = open('log.txt', "a")
     file.write(line(50))

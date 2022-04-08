@@ -4,6 +4,8 @@ from PyQt5.QtCore import Qt
 from datetime import datetime, timedelta
 import operator
 from typing import Final
+import os
+
 
 # label size
 S: Final = 80
@@ -23,7 +25,11 @@ def exists(point: tuple, start: int = 0, end: int = 8) -> bool:
 
 
 def image(suffix: str) -> str:
-    return 'Images/' + suffix + '.png'
+    return 'Images/Standard/' + suffix + '.png'
+
+
+def sound(name: str) -> str:
+    return os.path.join(os.getcwd() + "/SoundEffects", name + '.mp3')
 
 
 def time() -> str:

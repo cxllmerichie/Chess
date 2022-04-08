@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import QWidget, QLabel
-from PyQt5.QtCore import QSize, Qt, QEvent
+from PyQt5.QtCore import QSize, Qt, QEvent, QUrl
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from ChessLogic import Chess
-from Library import exists, new_label, S
+from Library import exists, new_label, S, sound
 
 turn: int = 0
 x1 = y1 = x2 = y2 = 0
@@ -16,6 +17,8 @@ class Window(QWidget):
 
     def __init__(self, log_file):
         super(Window, self).__init__()
+        self.player = QMediaPlayer()
+
         self.chess = Chess()
         self.label = Label(self, self.chess)
         self.log_file = log_file
@@ -111,6 +114,11 @@ class Window(QWidget):
         self.label.pieces[x2][y2].move(y2 * S, x2 * S)
         self.label.hide_position()
         move_buffer.clear()
+        self.play_sound('move')
+
+    def play_sound(self, action: str):
+        self.player.setMedia(QMediaContent(QUrl.fromLocalFile(sound(action))))
+        self.player.play()
 
     # game log
     def update_log(self) -> None:
@@ -129,6 +137,7 @@ class Window(QWidget):
         check_buffer.append(position[0])
         check_buffer.append(position[1])
         self.label.show_check()
+        self.play_sound('check')
 
     def check(self) -> None:
         if self.chess.check('w') and len(check_buffer) != 2:
@@ -156,7 +165,7 @@ class Window(QWidget):
                     for c in range(len(self.chess.chessboard)):
                         if self.chess.chessboard[r][c][0] == color:
                             self.label.stalemate[r][c].show()
-                            return True
+                return True
         return False
 
     def stalemate(self) -> bool:
