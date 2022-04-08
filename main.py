@@ -2,8 +2,6 @@
 # ToDo: AI algorithm
 # ToDo: multiplayer protocol
 # ToDo: vocal assistant
-# ToDo: fix refactor check/checkmate/stalemate
-# ToDo: add more sound effects
 
 from PyQt5.QtWidgets import QApplication
 from ChessGUI import Window

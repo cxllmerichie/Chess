@@ -29,6 +29,7 @@ class Window(QWidget):
         self.show()
 
     # user interaction
+    # @DECORATOR
     def mousePressEvent(self, click) -> None:
         global x1, x2, y1, y2, move_buffer
         if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // S][click.x() // S] == '--'):
@@ -46,6 +47,7 @@ class Window(QWidget):
                 if is_moved:
                     self.play_sound(self.sound)
 
+    # @DECORATOR
     def eventFilter(self, obj, event) -> bool:
         if not self.enable_mouse_click:
             if event.type() in (QEvent.MouseButtonPress, QEvent.MouseButtonDblClick):
@@ -141,48 +143,42 @@ class Window(QWidget):
 
     # END-GAME procedures
     def check_for(self, piece: str) -> None:
-        position: tuple = self.chess.pos(piece)
+        position: tuple = self.chess.position(piece)
         check_buffer.append(position[0])
         check_buffer.append(position[1])
         self.label.show_check()
         self.sound = 'check'
 
     def check(self) -> None:
-        if self.chess.check('w') and len(check_buffer) != 2:
+        if self.chess.is_check_for('w') and len(check_buffer) != 2:
             self.check_for('wK')
-        elif self.chess.check('b') and len(check_buffer) != 2:
+        elif self.chess.is_check_for('b') and len(check_buffer) != 2:
             self.check_for('bK')
         else:
             self.label.hide_check()
 
-    def checkmate(self) -> bool:
-        if self.chess.no_position('w'):
-            if self.chess.check('w'):
-                self.label.checkmate[self.chess.pos('wK')[0]][self.chess.pos('wK')[1]].show()
-                self.sound = 'check'
-                return True
-        elif self.chess.no_position('b'):
-            if self.chess.check('b'):
-                self.label.checkmate[self.chess.pos('bK')[0]][self.chess.pos('bK')[1]].show()
-                self.sound = 'check'
-                return True
+    def checkmate_for(self, piece: str) -> bool:
+        if self.chess.empty_move_set_for(piece[0]) and self.chess.is_check_for(piece[0]):
+            self.label.checkmate[self.chess.position(piece)[0]][self.chess.position(piece)[1]].show()
+            self.sound = 'check'
+            return True
         return False
 
+    def checkmate(self) -> bool:
+        return self.checkmate_for('wK') or self.checkmate_for('bK')
+
     def stalemate_for(self, color: str) -> bool:
-        if self.chess.no_position(color):
-            if not self.chess.check(color):
-                for r in range(len(self.chess.chessboard)):
-                    for c in range(len(self.chess.chessboard)):
-                        if self.chess.chessboard[r][c][0] == color:
-                            self.label.stalemate[r][c].show()
-                self.sound = 'check'
-                return True
+        if self.chess.empty_move_set_for(color) and not self.chess.is_check_for(color):
+            for r in range(len(self.chess.chessboard)):
+                for c in range(len(self.chess.chessboard)):
+                    if self.chess.chessboard[r][c][0] == color:
+                        self.label.stalemate[r][c].show()
+            self.sound = 'check'
+            return True
         return False
 
     def stalemate(self) -> bool:
-        if self.stalemate_for('w'):
-            return True
-        return self.stalemate_for('b')
+        return self.stalemate_for('w') or self.stalemate_for('b')
 
 
 class Promotion(QWidget):
@@ -203,6 +199,7 @@ class Promotion(QWidget):
         self.setWindowFlag(Qt.FramelessWindowHint)
         self.show()
 
+    # @DECORATOR
     def mousePressEvent(self, click):
         self.window.enable_mouse_click = True
         piece: str = self.color + self.case[click.y() // S][1]
@@ -220,7 +217,7 @@ class Promotion(QWidget):
 
 
 class Label:
-    def __init__(self, window: QWidget, chess: Chess = None):
+    def __init__(self, window: QWidget, chess: Chess):
         self.background: list = self.create_background(window, chess)
         self.position: list = self.create_indicators('gd', window, chess)
         self.check: list = self.create_indicators('rc', window, chess)
