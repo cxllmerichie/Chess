@@ -3,6 +3,7 @@
 # ToDo: multiplayer protocol
 # ToDo: vocal assistant
 # ToDo: fix refactor check/checkmate/stalemate
+# ToDo: add more sound effects
 
 from PyQt5.QtWidgets import QApplication
 from ChessGUI import Window
@@ -21,7 +22,6 @@ if __name__ == '__main__':
     window = Window(file)
     window.installEventFilter(window)
     app.exec()
-
     end = default_timer()
     file.write('End: ' + date() + ' ' + time() + '\n')
     file.write('Duration: ' + duration(start, end) + '\n')

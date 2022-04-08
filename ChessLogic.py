@@ -214,10 +214,10 @@ class Position:
 class Castling:
     def __init__(self):
         # R was not moved, K was not moved, way is clear, not dangerous pos, K would not be under check
-        self.long_w = [True, True, True, True, True]
-        self.long_b = [True, True, True, True, True]
-        self.short_w = [True, True, True, True, True]
-        self.short_b = [True, True, True, True, True]
+        self.long_w = [True, True, True, True]
+        self.long_b = [True, True, True, True]
+        self.short_w = [True, True, True, True]
+        self.short_b = [True, True, True, True]
 
     def dangerous_white_pos(self, bms: set):
         # wK goes through dangerous pos
@@ -241,9 +241,7 @@ class Castling:
                 self.long_w[2] = False
                 break
         # short white
-        print("NEW")
         for c in range(5, 7, 1):
-            print(7, c)
             self.short_w[2] = True
             if chessboard[7][c] != '--':
                 self.short_w[2] = False
