@@ -1,12 +1,11 @@
 # ToDo: player1 & player2 control (sequence 1,2,1,2,1,2...)
-# ToDo: king+rook swap
 # ToDo: AI algorithm
 # ToDo: multiplayer protocol
 # ToDo: vocal assistant
 # ToDo: fix refactor check/checkmate/stalemate
 
 from PyQt5.QtWidgets import QApplication
-from Application import Window
+from ChessGUI import Window
 from Library import time, date, line, duration
 from timeit import default_timer
 from sys import argv

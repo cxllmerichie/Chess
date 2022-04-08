@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import QSize, Qt, QEvent
 from ChessLogic import Chess
-from Library import exists, new_label, LS
+from Library import exists, new_label, S
 
 turn: int = 0
 x1 = y1 = x2 = y2 = 0
@@ -20,17 +20,15 @@ class Window(QWidget):
         self.label = Label(self, self.chess)
         self.log_file = log_file
 
-        self.setFixedSize(QSize(LS*8, LS*8))
+        self.setFixedSize(QSize(S * 8, S * 8))
         self.setWindowTitle('Chess')
-        # self.move(200, 200)
         self.show()
 
     # user interaction
     def mousePressEvent(self, click) -> None:
-        self.chess.print_position()
         global x1, x2, y1, y2, move_buffer
-        if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // LS][click.x() // LS] == '--'):
-            move_buffer.append([click.y() // LS, click.x() // LS])
+        if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // S][click.x() // S] == '--'):
+            move_buffer.append([click.y() // S, click.x() // S])
             x1, y1 = move_buffer[0][0], move_buffer[0][1]
             self.fill_buffers()
             self.label.show_indicators()
@@ -64,33 +62,53 @@ class Window(QWidget):
     # piece move
     def move_action(self) -> None:
         if (x2, y2) in position_buffer or (x2, y2) in capture_buffer:
+            self.is_castling()
             self.is_capture()
-            self.is_promotion(self.chess.chessboard[x1][y1], (x2, y2))
+            self.is_promotion()
             self.move_piece()
             self.update_log()
         else:
             move_buffer.clear()
 
-    def is_promotion(self, piece: str, pos: tuple):
-        if piece[1] == 'p':
-            if (piece[0] == 'w' and pos[0] == 0) or (piece[0] == 'b' and pos[0] == 7):
+    def is_promotion(self):
+        if self.chess.chessboard[x1][y1][1] == 'p':
+            if (self.chess.chessboard[x1][y1][0] == 'w' and x2 == 0) or (self.chess.chessboard[x1][y1][0] == 'b' and x2 == 7):
                 self.enable_mouse_click = False
-                Promotion(self, pos, piece)
+                Promotion(self, (x2, y2), self.chess.chessboard[x1][y1])
 
     def is_capture(self) -> None:
         if self.chess.chessboard[x2][y2] != '--':
             self.label.pieces[x2][y2].hide()
             self.chess.chessboard[x2][y2] = '--'
 
+    def is_castling(self) -> None:
+        rp, ep = [], []
+        if self.chess.chessboard[x1][y1] == 'wK':
+            if x1 == 7 and y1 == 4 and x2 == 7 and y2 == 6:
+                rp = [7, 7]
+                ep = [7, 5]
+            elif x1 == 7 and y1 == 4 and x2 == 7 and y2 == 2:
+                rp = [7, 0]
+                ep = [7, 3]
+        elif self.chess.chessboard[x1][y1] == 'bK':
+            if x1 == 0 and y1 == 4 and x2 == 0 and y2 == 6:
+                rp = [0, 7]
+                ep = [0, 5]
+            elif x1 == 0 and y1 == 4 and x2 == 0 and y2 == 2:
+                rp = [0, 0]
+                ep = [0, 3]
+        if len(rp) == len(ep) == 2:
+            self.chess.chessboard[ep[0]][ep[1]], self.chess.chessboard[rp[0]][rp[1]] = self.chess.chessboard[rp[0]][rp[1]], self.chess.chessboard[ep[0]][ep[1]]
+            self.label.pieces[ep[0]][ep[1]], self.label.pieces[rp[0]][rp[1]] = self.label.pieces[rp[0]][rp[1]], self.label.pieces[ep[0]][ep[1]]
+            self.label.pieces[ep[0]][ep[1]].move(ep[1] * S, ep[0] * S)
+
     def move_piece(self) -> None:
-        self.chess.chessboard[x2][y2] = self.chess.chessboard[x1][y1]
-        self.chess.chessboard[x1][y1] = '--'
+        self.chess.chessboard[x2][y2], self.chess.chessboard[x1][y1] = self.chess.chessboard[x1][y1], self.chess.chessboard[x2][y2]
         self.move_piece_label()
 
     def move_piece_label(self) -> None:
-        self.label.pieces[x2][y2] = self.label.pieces[x1][y1]
-        self.label.pieces[x1][y1] = QLabel(self)
-        self.label.pieces[x2][y2].move(y2 * LS, x2 * LS)
+        self.label.pieces[x2][y2], self.label.pieces[x1][y1] = self.label.pieces[x1][y1], self.label.pieces[x2][y2]
+        self.label.pieces[x2][y2].move(y2 * S, x2 * S)
         self.label.hide_position()
         move_buffer.clear()
 
@@ -155,26 +173,26 @@ class Promotion(QWidget):
         self.y = position[1]
         super(Promotion, self).__init__(self.window)
 
-        self.case: list = [(0, 'Q'), (LS, 'R'), (LS*2, 'N'), (LS*3, 'B')] if self.color == 'w' else [(0, 'B'), (LS, 'N'), (LS*2, 'R'), (LS*3, 'Q')]
+        self.case: list = [(0, 'Q'), (S, 'R'), (S * 2, 'N'), (S * 3, 'B')] if self.color == 'w' else [(0, 'B'), (S, 'N'), (S * 2, 'R'), (S * 3, 'Q')]
         for _tuple in self.case:
-            new_label(0, _tuple[0], LS, LS, 'grs', self).show()
-            new_label(0, _tuple[0], LS, LS, self.color + _tuple[1], self).show()
+            new_label(0, _tuple[0], S, S, 'grs', self).show()
+            new_label(0, _tuple[0], S, S, self.color + _tuple[1], self).show()
 
-        self.move(self.y * LS, 0) if self.color == 'w' else self.move(self.y * LS, LS*4)
-        self.setFixedSize(QSize(LS, LS*4))
+        self.move(self.y * S, 0) if self.color == 'w' else self.move(self.y * S, S * 4)
+        self.setFixedSize(QSize(S, S * 4))
         self.setWindowFlag(Qt.FramelessWindowHint)
         self.show()
 
     def mousePressEvent(self, click):
         self.window.enable_mouse_click = True
-        piece: str = self.color + self.case[click.y() // LS][1]
+        piece: str = self.color + self.case[click.y() // S][1]
         self.promotional_replacement(piece)
         self.hide()
 
     def promotional_replacement(self, _piece: str):
         self.window.chess.chessboard[self.x][self.y] = _piece
         self.window.label.pieces[self.x][self.y].hide()
-        self.window.label.pieces[self.x][self.y] = new_label(self.y * LS, self.x * LS, LS, LS, _piece, self.window)
+        self.window.label.pieces[self.x][self.y] = new_label(self.y * S, self.x * S, S, S, _piece, self.window)
         self.window.label.pieces[self.x][self.y].show()
         self.window.check()
         if self.window.checkmate() or self.window.stalemate():
@@ -200,7 +218,7 @@ class Label:
             _background.append([])
             for x in range(len(chess.chessboard)):
                 _background[y].append(
-                    new_label(x * LS, y * LS, LS, LS, 'gs' if (y + x) % 2 else 'ws', window))
+                    new_label(x * S, y * S, S, S, 'gs' if (y + x) % 2 else 'ws', window))
                 _background[y][x].show()
         return _background
 
@@ -212,7 +230,7 @@ class Label:
             for x in range(len(chess.chessboard)):
                 _pieces[y].append(QLabel(parent=window))
                 if chess.chessboard[y][x] != '--':
-                    _pieces[y][x] = new_label(x * LS, y * LS, LS, LS, chess.chessboard[y][x], window)
+                    _pieces[y][x] = new_label(x * S, y * S, S, S, chess.chessboard[y][x], window)
                     _pieces[y][x].show()
         return _pieces
 
@@ -222,7 +240,7 @@ class Label:
         for y in range(len(chess.chessboard)):
             indicators.append([])
             for x in range(len(chess.chessboard)):
-                indicators[y].append(new_label(x * LS, y * LS, LS, LS, label, window))
+                indicators[y].append(new_label(x * S, y * S, S, S, label, window))
                 indicators[y][x].hide()
         return indicators
 

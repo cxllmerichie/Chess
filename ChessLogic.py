@@ -42,6 +42,14 @@ class Chess:
                     _ams.update(tmp)
         return len(_ams) == 0
 
+    def cms(self, color: str):
+        ms = set()
+        for r in range(len(self.chessboard)):
+            for c in range(len(self.chessboard)):
+                if self.chessboard[r][c][0] == color:
+                    ms.update(Position(self.chessboard, r, c).move_set())
+        return ms
+
     def wms(self) -> set:
         _wms = set()
         for r in range(len(self.chessboard)):
@@ -90,7 +98,17 @@ class Chess:
     def move_set(self, x: int, y: int) -> set:
         move_set: set = Position(self.chessboard, x, y).move_set()
         move_set = self.evade_the_check(x, y, move_set)
-        self.castling.update_castling()
+        self.castling.update_castling(self.chessboard, self.bms(), self.wms())
+        if self.chessboard[x][y] == 'wK':
+            if self.castling.through(self.castling.long_w):
+                move_set.add((7, 2))
+            if self.castling.through(self.castling.short_w):
+                move_set.add((7, 6))
+        elif self.chessboard[x][y] == 'bK':
+            if self.castling.through(self.castling.long_b):
+                move_set.add((0, 2))
+            if self.castling.through(self.castling.short_b):
+                move_set.add((0, 6))
         return move_set
 
 
@@ -211,65 +229,73 @@ class Position:
 
 class Castling:
     def __init__(self):
-        # R was moved, K was moved, way is clear, dangerous pos
-        self.long: dict = {'w': [True, True, True, True], 'b': [True, True, True, True]}
-        self.short: dict = {'w': [True, True, True, True], 'b': [True, True, True, True]}
-        # 1) left (w/b)R was moved AND right (w/b)R was moved
-        # 2) (w/b)k was moved
-        # 4) left (w/b)R -- -- -- (w/b)K AND (w/b)K -- -- right (w/b)R
-        # 6) (w/b)K would not be under check or a way is in opponent move set
+        # R was not moved, K was not moved, way is clear, not dangerous pos, K would not be under check
+        self.long_w = [True, True, True, True, True]
+        self.long_b = [True, True, True, True, True]
+        self.short_w = [True, True, True, True, True]
+        self.short_b = [True, True, True, True, True]
 
-    def dangerous_white_pos(self, bms: list):
+    def dangerous_white_pos(self, bms: set):
         # wK goes through dangerous pos
-        self.long['w'][3] = False if (7, 3) in bms else True
-        self.short['w'][3] = False if (7, 5) in bms else True
+        self.long_w[3] = False if (7, 3) in bms else True
+        self.short_w[3] = False if (7, 5) in bms else True
 
-    def dangerous_black_pos(self, wms: list):
+    def dangerous_black_pos(self, wms: set):
         # bK goes through dangerous pos
-        self.long['b'] = False if (0, 3) in wms else True
-        self.short['b'] = False if (0, 5) in wms else True
+        self.long_b[3] = False if (0, 3) in wms else True
+        self.short_b[3] = False if (0, 5) in wms else True
 
     def way_is_clear(self, chessboard: list):
         # long white
         for c in range(1, 4, 1):
-            self.long['w'] = True
+            self.long_w[2] = True
             if chessboard[7][c] != '--':
-                self.long['w'] = False
+                self.long_w[2] = False
+                break
         # short white
         for c in range(5, 7, 1):
-            self.short['w'] = True
+            self.short_w[2] = True
             if chessboard[7][c] != '--':
-                self.short['w'] = False
+                self.short_w[2] = False
+                break
         # long black
         for c in range(1, 4, 1):
-            self.long['b'] = True
+            self.long_b[2] = True
             if chessboard[0][c] != '--':
-                self.long['b'] = False
+                self.long_b[2] = False
+                break
         # short black
         for c in range(5, 7, 1):
-            self.short['b'] = True
+            self.short_b[2] = True
             if chessboard[0][c] != '--':
-                self.short['b'] = False
+                self.short_b[2] = False
+                break
 
     def moved_guy(self, chessboard: list):
         if chessboard[0][4][1] != 'K':
-            self.long['b'] = False
-            self.short['b'] = False
+            self.long_b[1] = False
+            self.short_b[1] = False
         if chessboard[0][0][1] != 'R':
-            self.long['b'] = False
+            self.long_b[0] = False
         if chessboard[0][7][1] != 'R':
-            self.short['b'] = False
+            self.short_b[0] = False
         if chessboard[7][0][1] != 'R':
-            self.long['w'] = False
+            self.long_w[0] = False
         if chessboard[7][7][1] != 'R':
-            self.short['w'] = False
+            self.short_w[0] = False
         if chessboard[7][4][1] != 'K':
-            self.long['w'] = False
-            self.short['w'] = False
+            self.long_w[1] = False
+            self.short_w[1] = False
 
-    def update_castling(self, chessboard: list, bms: list, wms: list):
+    def update_castling(self, chessboard: list, bms: set, wms: set):
         self.way_is_clear(chessboard)
         self.dangerous_white_pos(bms)
         self.dangerous_black_pos(wms)
         self.moved_guy(chessboard)
 
+    @staticmethod
+    def through(guy: list) -> bool:
+        for _bool in guy:
+            if not _bool:
+                return False
+        return True
