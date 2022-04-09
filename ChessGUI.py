@@ -12,20 +12,20 @@ position_buffer: list = []
 capture_buffer: list = []
 
 
-class Window(QWidget):
-    enable_mouse_click: bool = True
-
-    def __init__(self, log_file):
-        super(Window, self).__init__()
+class ChessGUI(QWidget):
+    def __init__(self, window: QWidget, log_file):
+        super(ChessGUI, self).__init__(window)
         self.player = QMediaPlayer()
         self.sound: str = ''
+        self.enable_mouse_click: bool = True
 
         self.chess = Chess()
         self.label = Label(self, self.chess)
         self.log_file = log_file
 
+        self.move(S, S)
         self.setFixedSize(QSize(S * 8, S * 8))
-        self.setWindowTitle('Chess')
+        self.setWindowFlag(Qt.FramelessWindowHint)
         self.show()
 
     # user interaction
@@ -41,9 +41,7 @@ class Window(QWidget):
                 x2, y2 = move_buffer[1][0], move_buffer[1][1]
                 is_moved: bool = self.move_action()
                 self.label.hide_indicators()
-                self.check()
-                if self.checkmate() or self.stalemate():
-                    self.enable_mouse_click = False
+                self.end_game_procedures()
                 if is_moved:
                     self.play_sound(self.sound)
 
@@ -53,7 +51,7 @@ class Window(QWidget):
             if event.type() in (QEvent.MouseButtonPress, QEvent.MouseButtonDblClick):
                 if event.button() == Qt.LeftButton:
                     return True
-        return super(Window, self).eventFilter(obj, event)
+        return super(ChessGUI, self).eventFilter(obj, event)
 
     # INDICATORS
     def fill_buffers(self) -> None:
@@ -142,6 +140,11 @@ class Window(QWidget):
         )
 
     # END-GAME procedures
+    def end_game_procedures(self):
+        self.check()
+        if self.checkmate() or self.stalemate():
+            self.enable_mouse_click = False
+
     def check_for(self, piece: str) -> None:
         position: tuple = self.chess.position(piece)
         check_buffer.append(position[0])

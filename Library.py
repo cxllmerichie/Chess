@@ -8,6 +8,7 @@ import os
 
 # label size
 S: Final = 80
+FS: Final = int(S/4)
 
 
 def opf(v1, v2, _operator: str):

@@ -2,9 +2,12 @@
 # ToDo: AI algorithm
 # ToDo: multiplayer protocol
 # ToDo: vocal assistant
+# ToDo: main window
+# ToDo: winner / loser to log.txt
+# ToDo: log.txt to db
 
 from PyQt5.QtWidgets import QApplication
-from ChessGUI import Window
+from ChessGame import ChessGame
 from Library import time, date, line, duration
 from timeit import default_timer
 from sys import argv
@@ -17,9 +20,10 @@ if __name__ == '__main__':
     start = default_timer()
 
     app = QApplication(argv)
-    window = Window(file)
+    window = ChessGame(file)
     window.installEventFilter(window)
     app.exec()
+
     end = default_timer()
     file.write('End: ' + date() + ' ' + time() + '\n')
     file.write('Duration: ' + duration(start, end) + '\n')
