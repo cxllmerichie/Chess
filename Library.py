@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtGui import QPixmap, QImage, QPalette, QBrush
 from PyQt5.QtCore import Qt, QSize
 from datetime import datetime, timedelta
+from string import ascii_lowercase
 from typing import Final
 from enum import Enum
 import operator
@@ -12,16 +13,16 @@ S: Final = 90
 FS: Final = int(S/4)
 
 
-def opf(v1, v2, _operator: str):
+def opf(left: int, _operator: str, right: int):
     operators = {'+': operator.add, '-': operator.sub}
-    return operators[_operator](v1, v2)
+    return operators[_operator](left, right)
 
 
-def exist(coordinate: int, start: int = 0, end: int = 8) -> bool:
+def exists(coordinate: int, start: int = 0, end: int = 8) -> bool:
     return start <= coordinate < end
 
 
-def exists(coordinates: tuple, start: int = 0, end: int = 8) -> bool:
+def exist(coordinates: tuple, start: int = 0, end: int = 8) -> bool:
     return start <= coordinates[0] < end and start <= coordinates[1] < end
 
 
@@ -52,7 +53,7 @@ def line(length: int, symbol: str = '-') -> str:
 def set_exists(_set: set) -> set:
     __set = set()
     for _tuple in _set:
-        if exists(_tuple):
+        if exist(_tuple):
             __set.add(_tuple)
     return __set
 
@@ -73,6 +74,22 @@ def background(image: str) -> QPalette:
 
 
 class RetVal(Enum):
-    # from QMessageBox.exec_():
+    # QMessageBox.exec_() values from buttons Yes&No
     Yes = 16384
     No = 65536
+
+
+def create_square_names() -> list:
+    square_names: list = []
+    for row in range(1, 9, 1):
+        square_names.append([])
+        for letter in ascii_lowercase:
+            square_names[row - 1].append(letter + str(9 - row))
+    return square_names
+
+
+def true_list(guy: list) -> bool:
+    for _bool in guy:
+        if not _bool:
+            return False
+    return True

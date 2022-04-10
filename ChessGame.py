@@ -40,16 +40,16 @@ class ChessGame(QWidget):
     def button(self, title: str, geometry: tuple, click) -> QPushButton:
         button = QPushButton(title, self)
         button.setGeometry(geometry[0], geometry[1], geometry[2], geometry[3])
-        button.setFont(QFont('Arial', FS / 1.5))
-        button.setStyleSheet('background: gray')
+        button.setFont(QFont('Arial', FS / 2))
+        button.setStyleSheet('background: #323232')
         button.clicked.connect(click)
         return button
 
     def buttons(self):
-        self.button("Draw by agreement", (S, S*9+S/2, S*2, S/2),
+        self.button("Draw by agreement", (S, S*9+S/2, S*2, S/4),
                     lambda: self.message(QMessageBox.Question, "Draw by agreement", "Do you agree for a draw?")
                     ).show()
-        self.button("Resign", (S*7, S * 9 + S / 2, S * 2, S / 2),
+        self.button("Resign", (S*7, S * 9 + S / 2, S * 2, S / 4),
                     lambda: self.message(QMessageBox.Warning, "Resignation", "Do you want to resign?")
                     ).show()
 
