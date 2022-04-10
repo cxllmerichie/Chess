@@ -13,7 +13,7 @@ S: Final = 90
 FS: Final = int(S/4)
 
 
-def opf(left: int, _operator: str, right: int):
+def operate(left: int, _operator: str, right: int):
     operators = {'+': operator.add, '-': operator.sub}
     return operators[_operator](left, right)
 
@@ -66,15 +66,15 @@ def new_label(x: int, y: int, width: int, height: int, img: str, window: QWidget
     return label
 
 
-def background(image: str) -> QPalette:
-    img = QImage('Images/Standard/'+image+'.png').scaled(QSize(S * 10, S * 10))
+def new_palette(image: str, width: int = S * 10, height: int = S * 10) -> QPalette:
+    img = QImage('Images/Standard/'+image+'.png').scaled(QSize(width, height))
     palette = QPalette()
     palette.setBrush(QPalette.Window, QBrush(img))
     return palette
 
 
 class RetVal(Enum):
-    # QMessageBox.exec_() values from buttons Yes&No
+    # QMessageBox.exec_() values from buttons Yes & No
     Yes = 16384
     No = 65536
 

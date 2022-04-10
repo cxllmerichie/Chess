@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import QSize, Qt, QEvent, QUrl
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from ChessLogic import ChessLogic
-from Library import S, exist, new_label, sound, opf
+from Library import S, exist, new_label, sound, operate
 
 turn: int = 0
 x1 = y1 = x2 = y2 = 0
@@ -44,6 +44,7 @@ class ChessGUI(QWidget):
                 self.end_game_procedures()
                 if is_moved:
                     self.chess.last_move = [(x1, y1), (x2, y2)]
+                    print('Last moved guy: ', self.chess.last_move, ' was ', self.chess.chessboard[x2][y2])
                     self.play_sound(self.sound)
 
     # @DECORATOR
@@ -61,39 +62,43 @@ class ChessGUI(QWidget):
             if exist(cell):
                 if self.chess.chessboard[cell[0]][cell[1]] == '--':
                     position_buffer.append(cell)
-                elif self.chess.chessboard[cell[0]][cell[1]] != '--' and self.chess.chessboard[cell[0]][cell[1]][1] != 'K':
-                    capture_buffer.append(cell)
                 elif self.chess.chessboard[cell[0]][cell[1]][1] == 'K':
                     check_buffer = list(cell)
+                elif self.chess.chessboard[cell[0]][cell[1]] != '--':
+                    capture_buffer.append(cell)
 
     # piece move
     def move_action(self) -> bool:
         if (x2, y2) in position_buffer or (x2, y2) in capture_buffer:
             self.sound = 'move'
-            self.is_en_passant()
-            self.is_castling()
-            self.is_capture()
-            self.is_promotion()
+            if not self.is_castling():
+                self.is_capture()
+                if not self.is_promotion():
+                    self.is_en_passant()
             self.move_piece()
             self.update_log()
             return True
         move_buffer.clear()
         return False
 
-    def is_promotion(self):
+    def is_promotion(self) -> bool:
         if self.chess.chessboard[x1][y1][1] == 'p':
             if (self.chess.chessboard[x1][y1][0] == 'w' and x2 == 0) or (self.chess.chessboard[x1][y1][0] == 'b' and x2 == 7):
                 self.enable_mouse_click = False
                 Promotion(self, (x2, y2), self.chess.chessboard[x1][y1])
                 self.sound = 'castling'
+                return True
+        return False
 
-    def is_capture(self) -> None:
+    def is_capture(self) -> bool:
         if self.chess.chessboard[x2][y2] != '--':
             self.label.pieces[x2][y2].hide()
             self.chess.chessboard[x2][y2] = '--'
             self.sound = 'capture'
+            return True
+        return False
 
-    def is_castling(self) -> None:
+    def is_castling(self) -> bool:
         rp, ep = [], []
         if self.chess.chessboard[x1][y1] == 'wK':
             if x1 == 7 and y1 == 4 and x2 == 7 and y2 == 6:
@@ -110,14 +115,20 @@ class ChessGUI(QWidget):
             self.label.pieces[ep[0]][ep[1]], self.label.pieces[rp[0]][rp[1]] = self.label.pieces[rp[0]][rp[1]], self.label.pieces[ep[0]][ep[1]]
             self.label.pieces[ep[0]][ep[1]].move(ep[1] * S, ep[0] * S)
             self.sound = 'castling'
+            return True
+        return False
 
-    def is_en_passant(self):
+    def is_en_passant(self) -> bool:
         if self.chess.chessboard[x2][y2] == '--' and abs(y1-y2) == 1:
             operator = '+' if self.chess.chessboard[x1][y1] == 'wp' else '-'
-            x = opf(x2, operator, 1)
-            self.label.pieces[x][y2].hide()
-            self.label.pieces[x][y2] = QLabel(self)
-            self.chess.chessboard[x][y2] = '--'
+            if self.chess.chessboard[x1][y1][1] == 'p':
+                x = operate(x2, operator, 1)
+                self.label.pieces[x][y2].hide()
+                self.label.pieces[x][y2] = QLabel(self)
+                self.chess.chessboard[x][y2] = '--'
+                self.sound = 'capture'
+                return True
+        return False
 
     def move_piece(self) -> None:
         self.chess.chessboard[x2][y2], self.chess.chessboard[x1][y1] = self.chess.chessboard[x1][y1], self.chess.chessboard[x2][y2]
@@ -151,16 +162,15 @@ class ChessGUI(QWidget):
             self.enable_mouse_click = False
 
     def check_for(self, piece: str) -> None:
-        position: tuple = self.chess.position(piece)
-        check_buffer.append(position[0])
-        check_buffer.append(position[1])
+        global check_buffer
+        check_buffer = list(self.chess.position(piece))
         self.label.show_check()
         self.sound = 'check'
 
     def check(self) -> None:
-        if self.chess.is_check_for('w') and len(check_buffer) != 2:
+        if self.chess.is_check_for('w'):
             self.check_for('wK')
-        elif self.chess.is_check_for('b') and len(check_buffer) != 2:
+        elif self.chess.is_check_for('b'):
             self.check_for('bK')
         else:
             self.label.hide_check()

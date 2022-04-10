@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QMessageBox
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QFont
-from Library import S, FS, background, RetVal
+from Library import S, FS, new_palette, RetVal
 from string import ascii_uppercase
 from ChessGUI import ChessGUI
 
@@ -11,7 +11,7 @@ class ChessGame(QWidget):
         super(ChessGame, self).__init__()
         self.setWindowTitle('Chess')
         self.setFixedSize(QSize(S * 10, S * 10))
-        self.setPalette(background('background'))
+        self.setPalette(new_palette('background'))
 
         self.hints()
         self.chessgui = ChessGUI(self, log_file)

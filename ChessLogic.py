@@ -1,4 +1,4 @@
-from Library import exists, exist, opf, set_exists, create_square_names, true_list
+from Library import exists, exist, operate, set_exists, create_square_names, true_list
 
 
 class ChessLogic:
@@ -24,14 +24,14 @@ class ChessLogic:
         return -1, -1
 
     def empty_move_set_for(self, color: str) -> bool:
-        _ams = set()
+        ms = set()
         for r in range(len(self.chessboard)):
             for c in range(len(self.chessboard)):
                 if self.chessboard[r][c][0] == color:
                     tmp: set = Position(self.chessboard, r, c, self.last_move).move_set()
                     tmp = self.prevent_the_check(r, c, tmp)
-                    _ams.update(tmp)
-        return len(_ams) == 0
+                    ms.update(tmp)
+        return len(ms) == 0
 
     def move_set_for(self, color: str):
         ms = set()
@@ -76,7 +76,7 @@ class ChessLogic:
 
 
 class Position:
-    def __init__(self, chessboard, x: int = 0, y: int = 0, last_move: list = None):
+    def __init__(self, chessboard, x: int, y: int, last_move: list):
         self.chessboard = chessboard
         self.x: int = x
         self.y: int = y
@@ -104,7 +104,7 @@ class Position:
         ms = set()
         opponents = 'w' if self.color == 'b' else 'b'
         operator = '+' if self.color == 'b' else '-'
-        x1, x2 = opf(self.x, operator, 1), opf(self.x, operator, 2)
+        x1, x2 = operate(self.x, operator, 1), operate(self.x, operator, 2)
         if exists(x1):
             if self.chessboard[x1][self.y] == '--':
                 ms.add((x1, self.y))
@@ -118,16 +118,16 @@ class Position:
         # en passant
         x1, y1, x2, y2 = self.last_move[0][0], self.last_move[0][1], self.last_move[1][0], self.last_move[1][1]
         if self.chessboard[x2][y2] == 'bp':
-            if abs(x1 - x2) == 2 and self.color == 'w' and self.x == 3:
+            if abs(x1 - x2) == 2 and self.chessboard[self.x][self.y] == 'wp' and self.x == 3:
                 if exists(y2 + 1) and self.chessboard[x2][y2 + 1] == 'wp':
                     ms.add((self.x-1, self.y-1))
-                if exists(y2 - 1) and self.chessboard[x2][y2 - 1] == 'wp':
+                elif exists(y2 - 1) and self.chessboard[x2][y2 - 1] == 'wp':
                     ms.add((self.x-1, self.y+1))
         elif self.chessboard[x2][y2] == 'wp':
-            if abs(x1 - x2) == 2 and self.color == 'b' and self.x == 4:
+            if abs(x1 - x2) == 2 and self.chessboard[self.x][self.y] == 'bp' and self.x == 4:
                 if exists(y2 + 1) and self.chessboard[x2][y2 + 1] == 'bp':
                     ms.add((self.x+1, self.y-1))
-                if exists(y2 - 1) and self.chessboard[x2][y2 - 1] == 'bp':
+                elif exists(y2 - 1) and self.chessboard[x2][y2 - 1] == 'bp':
                     ms.add((self.x+1, self.y+1))
         return ms
 
@@ -171,7 +171,7 @@ class Position:
         tmp = [('+', '+'), ('-', '+'), ('+', '-'), ('-', '-')]
         for op in tmp:
             for c in range(1, 8, 1):
-                x, y = opf(self.x, op[0], c), opf(self.y, op[1], c)
+                x, y = operate(self.x, op[0], c), operate(self.y, op[1], c)
                 if x < 8 and y < 8:
                     if self.chessboard[x][y][0] == self.color:
                         break
