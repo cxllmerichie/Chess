@@ -43,7 +43,7 @@ class ChessGUI(QWidget):
                 self.label.hide_indicators()
                 self.end_game_procedures()
                 if is_moved:
-                    self.chess.update_last_move(x1, y1, x2, y2)
+                    self.chess.last_move = [(x1, y1), (x2, y2)]
                     self.play_sound(self.sound)
 
     # @DECORATOR

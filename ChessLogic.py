@@ -16,10 +16,6 @@ class ChessLogic:
         self.castling = Castling()
         self.last_move = [(0, 0), (0, 0)]
 
-    def update_last_move(self, x1: int, y1: int, x2: int, y2: int):
-        self._from = (x1, y1)
-        self._to = (x2, y2)
-
     def position(self, piece: str) -> tuple:
         for row in range(len(self.chessboard)):
             for col in range(len(self.chessboard)):
@@ -32,7 +28,7 @@ class ChessLogic:
         for r in range(len(self.chessboard)):
             for c in range(len(self.chessboard)):
                 if self.chessboard[r][c][0] == color:
-                    tmp: set = Position(self.is_en_passant(self._from, self._to), self.chessboard, r, c).move_set()
+                    tmp: set = Position(self.chessboard, r, c, self.last_move).move_set()
                     tmp = self.prevent_the_check(r, c, tmp)
                     _ams.update(tmp)
         return len(_ams) == 0
@@ -42,7 +38,7 @@ class ChessLogic:
         for r in range(len(self.chessboard)):
             for c in range(len(self.chessboard)):
                 if self.chessboard[r][c][0] == color:
-                    ms.update(Position(self.is_en_passant(self._from, self._to), self.chessboard, r, c).move_set())
+                    ms.update(Position(self.chessboard, r, c, self.last_move).move_set())
         return ms
 
     def is_check_for(self, color: str) -> bool:
@@ -63,8 +59,7 @@ class ChessLogic:
         return vms
 
     def move_set(self, x: int, y: int) -> set:
-        move_set: set = Position(self.is_en_passant(self._from, self._to), self.chessboard, x, y).move_set()
-        move_set = self.prevent_the_check(x, y, move_set)
+        move_set: set = Position(self.chessboard, x, y, self.last_move).move_set()
         self.castling.update(self.chessboard, self.move_set_for)
         if self.chessboard[x][y] == 'wK':
             if true_list(self.castling.long_w):
@@ -76,27 +71,12 @@ class ChessLogic:
                 move_set.add((0, 2))
             if true_list(self.castling.short_b):
                 move_set.add((0, 6))
+        move_set = self.prevent_the_check(x, y, move_set)
         return move_set
-
-    def is_en_passant(self, _from: tuple, _to: tuple) -> list:
-        lw = rw = lb = rb = False
-        if self.chessboard[_to[0]][_to[1]] == 'bp':
-            if abs(_from[0]-_to[0]) == 2:
-                if exists(_to[1] + 1) and self.chessboard[_to[0]][_to[1] + 1] == 'wp':
-                    lw = True
-                if exists(_to[1] - 1) and self.chessboard[_to[0]][_to[1] - 1] == 'wp':
-                    rw = True
-        elif self.chessboard[_to[0]][_to[1]] == 'wp':
-            if abs(_from[0]-_to[0]) == 2:
-                if exists(_to[1] + 1) and self.chessboard[_to[0]][_to[1] + 1] == 'bp':
-                    lb = True
-                if exists(_to[1] - 1) and self.chessboard[_to[0]][_to[1] - 1] == 'bp':
-                    rb = True
-        return [lw, rw, lb, rb]
 
 
 class Position:
-    def __init__(self, chessboard, x: int = 0, y: int = 0, last_move: list):
+    def __init__(self, chessboard, x: int = 0, y: int = 0, last_move: list = None):
         self.chessboard = chessboard
         self.x: int = x
         self.y: int = y
@@ -136,16 +116,19 @@ class Position:
             if self.chessboard[x2][self.y] == self.chessboard[x1][self.y] == '--':
                 ms.add((x2, self.y))
         # en passant
-        if self.color == 'w' and self.x == 3:
-            if self.lw and exists(self.y - 1) and self.chessboard[self.x][self.y - 1] == 'bp':
-                ms.add((self.x-1, self.y-1))
-            if self.rw and exists(self.y + 1) and self.chessboard[self.x][self.y + 1] == 'bp':
-                ms.add((self.x-1, self.y+1))
-        if self.color == 'b' and self.x == 4:
-            if self.lb and exists(self.y - 1) and self.chessboard[self.x][self.y - 1] == 'wp':
-                ms.add((self.x+1, self.y-1))
-            if self.rb and exists(self.y + 1) and self.chessboard[self.x][self.y + 1] == 'wp':
-                ms.add((self.x+1, self.y+1))
+        x1, y1, x2, y2 = self.last_move[0][0], self.last_move[0][1], self.last_move[1][0], self.last_move[1][1]
+        if self.chessboard[x2][y2] == 'bp':
+            if abs(x1 - x2) == 2 and self.color == 'w' and self.x == 3:
+                if exists(y2 + 1) and self.chessboard[x2][y2 + 1] == 'wp':
+                    ms.add((self.x-1, self.y-1))
+                if exists(y2 - 1) and self.chessboard[x2][y2 - 1] == 'wp':
+                    ms.add((self.x-1, self.y+1))
+        elif self.chessboard[x2][y2] == 'wp':
+            if abs(x1 - x2) == 2 and self.color == 'b' and self.x == 4:
+                if exists(y2 + 1) and self.chessboard[x2][y2 + 1] == 'bp':
+                    ms.add((self.x+1, self.y-1))
+                if exists(y2 - 1) and self.chessboard[x2][y2 - 1] == 'bp':
+                    ms.add((self.x+1, self.y+1))
         return ms
 
     def rook(self) -> set:
