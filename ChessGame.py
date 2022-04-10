@@ -1,9 +1,9 @@
-from PyQt5.QtWidgets import QWidget, QLabel
-from PyQt5.QtCore import QSize
-from Library import S, FS
-from ChessGUI import ChessGUI
-from PyQt5.QtGui import QImage, QPalette, QBrush, QFont
+from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QMessageBox
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QFont
+from Library import S, FS, background, RetVal
 from string import ascii_uppercase
+from ChessGUI import ChessGUI
 
 
 class ChessGame(QWidget):
@@ -11,29 +11,53 @@ class ChessGame(QWidget):
         super(ChessGame, self).__init__()
         self.setWindowTitle('Chess')
         self.setFixedSize(QSize(S * 10, S * 10))
-        img = QImage('Images/Standard/background.png').scaled(QSize(S*10, S*10))
-        palette = QPalette()
-        palette.setBrush(QPalette.Window, QBrush(img))
-        self.setPalette(palette)
+        self.setPalette(background('background'))
 
-        self.coordinates()
+        self.hints()
         self.chessgui = ChessGUI(self, log_file)
+        self.chessgui.installEventFilter(self.chessgui)
         self.show()
 
-    def coordinates(self):
-        for number in range(1, 9, 1):
-            label = QLabel(self)
-            label.setText(str(ascii_uppercase[number-1]))
-            label.move(number*S + S/2 - FS/3, S-1.5*FS)
-            label.setFont(QFont('Arial', FS))
-            label.setStyleSheet('color: gray')
-            label.show()
-        for number in range(1, 9, 1):
-            label = QLabel(self)
-            label.setText(str(ascii_uppercase[number-1]))
-            label.move(number*S + S/2 - FS/3, S*9)
-            label.setFont(QFont('Arial', FS))
-            label.setStyleSheet('color: gray')
-            label.show()
+        self.buttons()
 
+    def hint(self, symbol: str, alignment, position: tuple) -> QLabel:
+        label = QLabel(self)
+        label.setText(symbol)
+        label.setFixedSize(QSize(S, S))
+        label.setAlignment(alignment)
+        label.setFont(QFont('Arial', FS))
+        label.setStyleSheet('color: gray')
+        label.move(position[0], position[1])
+        return label
 
+    def hints(self):
+        for i in range(1, 9, 1):
+            self.hint(str(ascii_uppercase[i-1]), Qt.AlignHCenter | Qt.AlignBottom, (i*S, 0)).show()
+            self.hint(str(ascii_uppercase[i-1]), Qt.AlignHCenter | Qt.AlignTop, (S*i, S*9)).show()
+            self.hint(str(9-i), Qt.AlignVCenter | Qt.AlignLeft, (S*9, S*i)).show()
+            self.hint(str(9-i), Qt.AlignVCenter | Qt.AlignRight, (0, S*i)).show()
+
+    def button(self, title: str, geometry: tuple, click) -> QPushButton:
+        button = QPushButton(title, self)
+        button.setGeometry(geometry[0], geometry[1], geometry[2], geometry[3])
+        button.setFont(QFont('Arial', FS / 1.5))
+        button.setStyleSheet('background: gray')
+        button.clicked.connect(click)
+        return button
+
+    def buttons(self):
+        self.button("Draw by agreement", (S, S*9+S/2, S*2, S/2),
+                    lambda: self.message(QMessageBox.Question, "Draw by agreement", "Do you agree for a draw?")
+                    ).show()
+        self.button("Resign", (S*7, S * 9 + S / 2, S * 2, S / 2),
+                    lambda: self.message(QMessageBox.Warning, "Resignation", "Do you want to resign?")
+                    ).show()
+
+    def message(self, icon_type, title: str, text: str):
+        msg = QMessageBox()
+        msg.setIcon(icon_type)
+        msg.setText(text)
+        msg.setWindowTitle(title)
+        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        if msg.exec_() == RetVal.Yes.value:
+            self.chessgui.enable_mouse_click = False

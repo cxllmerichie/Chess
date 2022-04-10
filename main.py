@@ -21,7 +21,6 @@ if __name__ == '__main__':
 
     app = QApplication(argv)
     window = ChessGame(file)
-    window.installEventFilter(window)
     app.exec()
 
     end = default_timer()

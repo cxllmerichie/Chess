@@ -1,13 +1,14 @@
 from PyQt5.QtWidgets import QWidget, QLabel
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap, QImage, QPalette, QBrush
+from PyQt5.QtCore import Qt, QSize
 from datetime import datetime, timedelta
 from typing import Final
+from enum import Enum
 import operator
 import os
 
 # label size
-S: Final = 80
+S: Final = 90
 FS: Final = int(S/4)
 
 
@@ -62,3 +63,16 @@ def new_label(x: int, y: int, width: int, height: int, img: str, window: QWidget
     label.resize(width, height)
     label.move(x, y)
     return label
+
+
+def background(image: str) -> QPalette:
+    img = QImage('Images/Standard/'+image+'.png').scaled(QSize(S * 10, S * 10))
+    palette = QPalette()
+    palette.setBrush(QPalette.Window, QBrush(img))
+    return palette
+
+
+class RetVal(Enum):
+    # from QMessageBox.exec_():
+    Yes = 16384
+    No = 65536

@@ -43,6 +43,8 @@ class ChessGUI(QWidget):
                 self.label.hide_indicators()
                 self.end_game_procedures()
                 if is_moved:
+                    self.chess._from = (x1, y1)
+                    self.chess._to = (x2, y2)
                     self.play_sound(self.sound)
 
     # @DECORATOR
@@ -69,6 +71,7 @@ class ChessGUI(QWidget):
     def move_action(self) -> bool:
         if (x2, y2) in position_buffer or (x2, y2) in capture_buffer:
             self.sound = 'move'
+            self.is_en_passant()
             self.is_castling()
             self.is_capture()
             self.is_promotion()
@@ -113,6 +116,19 @@ class ChessGUI(QWidget):
             self.label.pieces[ep[0]][ep[1]], self.label.pieces[rp[0]][rp[1]] = self.label.pieces[rp[0]][rp[1]], self.label.pieces[ep[0]][ep[1]]
             self.label.pieces[ep[0]][ep[1]].move(ep[1] * S, ep[0] * S)
             self.sound = 'castling'
+
+    def is_en_passant(self):
+        if self.chess.chessboard[x1][y1] == 'wp':
+            if self.chess.chessboard[x2][y2] == '--':
+                if abs(y1-y2) == 1:
+                    self.label.pieces[x2+1][y2].hide()
+                    self.label.pieces[x2 + 1][y2] = QLabel(self)
+                    self.chess.chessboard[x2+1][y2] = '--'
+        if self.chess.chessboard[x1][y1] == 'bp':
+            if self.chess.chessboard[x2][y2] == '--':
+                if abs(y1-y2) == 1:
+                    self.label.pieces[x2-1][y2].hide()
+                    self.chess.chessboard[x2-1][y2] = '--'
 
     def move_piece(self) -> None:
         self.chess.chessboard[x2][y2], self.chess.chessboard[x1][y1] = self.chess.chessboard[x1][y1], self.chess.chessboard[x2][y2]
