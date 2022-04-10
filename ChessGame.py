@@ -20,10 +20,10 @@ class ChessGame(QWidget):
 
         self.buttons()
 
-    def hint(self, symbol: str, alignment, position: tuple) -> QLabel:
+    def hint(self, symbol: str, alignment, position: tuple, size: QSize) -> QLabel:
         label = QLabel(self)
         label.setText(symbol)
-        label.setFixedSize(QSize(S, S))
+        label.setFixedSize(size)
         label.setAlignment(alignment)
         label.setFont(QFont('Arial', FS))
         label.setStyleSheet('color: gray')
@@ -32,10 +32,10 @@ class ChessGame(QWidget):
 
     def hints(self):
         for i in range(1, 9, 1):
-            self.hint(str(ascii_uppercase[i-1]), Qt.AlignHCenter | Qt.AlignBottom, (i*S, 0)).show()
-            self.hint(str(ascii_uppercase[i-1]), Qt.AlignHCenter | Qt.AlignTop, (S*i, S*9)).show()
-            self.hint(str(9-i), Qt.AlignVCenter | Qt.AlignLeft, (S*9, S*i)).show()
-            self.hint(str(9-i), Qt.AlignVCenter | Qt.AlignRight, (0, S*i)).show()
+            self.hint(str(ascii_uppercase[i-1]), Qt.AlignHCenter | Qt.AlignBottom, (i*S, 0), QSize(S, S)).show()
+            self.hint(str(ascii_uppercase[i-1]), Qt.AlignHCenter | Qt.AlignTop, (S*i, S*9), QSize(S, S)).show()
+            self.hint(str(9-i), Qt.AlignVCenter | Qt.AlignLeft, (S*9+0.1*S, S*i), QSize(0.9*S, S)).show()
+            self.hint(str(9-i), Qt.AlignVCenter | Qt.AlignRight, (0, S*i), QSize(0.9*S, S)).show()
 
     def button(self, title: str, geometry: tuple, click) -> QPushButton:
         button = QPushButton(title, self)
@@ -46,12 +46,16 @@ class ChessGame(QWidget):
         return button
 
     def buttons(self):
-        self.button("Draw by agreement", (S, S*9+S/2, S*2, S/4),
-                    lambda: self.message(QMessageBox.Question, "Draw by agreement", "Do you agree for a draw?")
-                    ).show()
-        self.button("Resign", (S*7, S * 9 + S / 2, S * 2, S / 4),
-                    lambda: self.message(QMessageBox.Warning, "Resignation", "Do you want to resign?")
-                    ).show()
+        self.button('Draw by agreement', (S, S*9+S/2, S*2, S/4),
+                    lambda: self.message(QMessageBox.Question, "Draw by agreement", "Do you agree for a draw?")).show()
+        self.button('Resign', (S*7, S * 9 + S / 2, S * 2, S / 4),
+                    lambda: self.message(QMessageBox.Warning, "Resignation", "Do you want to resign?")).show()
+        self.button('VolumeUp', (S*9, 0, S, S/4),
+                    lambda: self.chessgui.player.setVolume(self.chessgui.player.volume() + 10)).show()
+        self.button('VolumeDown', (S*9, S/4, S, S/4),
+                    lambda: self.chessgui.player.setVolume(self.chessgui.player.volume() - 10)).show()
+        self.button('Mute', (S*9, S/2, S, S/4),
+                    lambda: self.chessgui.player.setVolume(0 if self.chessgui.player.volume() != 0 else 100)).show()
 
     def message(self, icon_type, title: str, text: str):
         msg = QMessageBox()

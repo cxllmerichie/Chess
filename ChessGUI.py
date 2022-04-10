@@ -44,7 +44,6 @@ class ChessGUI(QWidget):
                 self.end_game_procedures()
                 if is_moved:
                     self.chess.last_move = [(x1, y1), (x2, y2)]
-                    print('Last moved guy: ', self.chess.last_move, ' was ', self.chess.chessboard[x2][y2])
                     self.play_sound(self.sound)
 
     # @DECORATOR
@@ -72,8 +71,9 @@ class ChessGUI(QWidget):
         if (x2, y2) in position_buffer or (x2, y2) in capture_buffer:
             self.sound = 'move'
             if not self.is_castling():
-                self.is_capture()
-                if not self.is_promotion():
+                captured: bool = self.is_capture()
+                promoted: bool = self.is_promotion()
+                if not captured and not promoted:
                     self.is_en_passant()
             self.move_piece()
             self.update_log()
