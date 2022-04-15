@@ -156,10 +156,11 @@ class ChessGUI(QWidget):
         )
 
     # END-GAME procedures
-    def end_game_procedures(self):
-        self.check()
+    def end_game_procedures(self) -> bool:
         if self.checkmate() or self.stalemate():
             self.enable_mouse_click = False
+            return True
+        return self.check()
 
     def check_for(self, piece: str) -> None:
         global check_buffer
@@ -167,13 +168,15 @@ class ChessGUI(QWidget):
         self.label.show_check()
         self.sound = 'check'
 
-    def check(self) -> None:
+    def check(self) -> bool:
         if self.chess.is_check_for('w'):
             self.check_for('wK')
+            return True
         elif self.chess.is_check_for('b'):
             self.check_for('bK')
-        else:
-            self.label.hide_check()
+            return True
+        self.label.hide_check()
+        return False
 
     def checkmate_for(self, piece: str) -> bool:
         if self.chess.empty_move_set_for(piece[0]) and self.chess.is_check_for(piece[0]):
@@ -229,7 +232,8 @@ class Promotion(QWidget):
         self.window.label.pieces[self.x][self.y].hide()
         self.window.label.pieces[self.x][self.y] = new_label(self.y * S, self.x * S, S, S, _piece, self.window)
         self.window.label.pieces[self.x][self.y].show()
-        self.window.end_game_procedures()
+        if self.window.end_game_procedures():
+            self.window.play_sound('check')
 
 
 class Label:

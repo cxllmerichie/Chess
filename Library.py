@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from string import ascii_lowercase
 from typing import Final
 from enum import Enum
+from time import sleep
 import operator
 import os
 
@@ -93,3 +94,12 @@ def true_list(guy: list) -> bool:
         if not _bool:
             return False
     return True
+
+
+def countdown(amount: int = 600, label: QLabel = None) -> None:
+    while amount:
+        minutes, seconds = divmod(amount, 60)
+        timer: str = '{:02d}:{:02d}'.format(minutes, seconds)
+        label.setText(timer)
+        sleep(1)
+        amount -= 1
