@@ -8,6 +8,10 @@ from threading import Thread
 
 
 class ChessGame(QWidget):
+    white_timer: QLabel
+    black_timer: QLabel
+    timer_thread: dict = {}
+
     def __init__(self, log_file):
         super(ChessGame, self).__init__()
         self.setWindowTitle('Chess')
@@ -16,17 +20,11 @@ class ChessGame(QWidget):
 
         self.hints()
         self.buttons()
+        self.timer()
 
         self.chessgui = ChessGUI(self, log_file)
         self.chessgui.installEventFilter(self.chessgui)
         self.show()
-
-        # Timers
-        self.white_timer = self.hint("00:00", Qt.AlignHCenter | Qt.AlignVCenter, (0, 0), QSize(S, S))
-        self.black_timer = self.hint("00:00", Qt.AlignHCenter | Qt.AlignVCenter, (S * 9, 0), QSize(S, S))
-        self.white_timer.show()
-        self.black_timer.show()
-        self.timer()
 
     def hint(self, symbol: str, alignment, position: tuple, size: QSize) -> QLabel:
         label = QLabel(self)
@@ -75,5 +73,20 @@ class ChessGame(QWidget):
             self.chessgui.enable_mouse_click = False
 
     def timer(self) -> None:
-        Thread(target=lambda: countdown(amount=600, label=self.white_timer)).start()
-        Thread(target=lambda: countdown(amount=600, label=self.black_timer)).start()
+        self.white_timer = self.hint("00:00", Qt.AlignHCenter | Qt.AlignVCenter, (0, 0), QSize(S, S))
+        self.black_timer = self.hint("00:00", Qt.AlignHCenter | Qt.AlignVCenter, (S * 9, 0), QSize(S, S))
+        self.white_timer.show()
+        self.black_timer.show()
+        self.timer_thread: dict = {'w': Thread(target=lambda: countdown(amount=600, label=self.white_timer)),
+                                   'b': Thread(target=lambda: countdown(amount=600, label=self.black_timer))}
+        self.timer_thread['w'].start()
+        self.timer_thread['b'].start()
+
+    def pause_timer(self, timer: str) -> None:
+        self.timer_thread[timer].paused = True
+        self.timer_thread[timer].pause_cond.acquire()
+
+    def resume_timer(self, timer: str) -> None:
+        self.timer_thread[timer].paused = False
+        self.timer_thread[timer].pause_cond.notify()
+        self.timer_thread[timer].pause_cond.release()
