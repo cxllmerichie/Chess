@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import QSize, Qt, QEvent, QUrl
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from ChessLogic import ChessLogic
-from Library import S, exist, new_label, sound, operate
+from Library import S, exist, image_label, sound, operate
 
 turn: int = 0
 x1 = y1 = x2 = y2 = 0
@@ -212,8 +212,8 @@ class Promotion(QWidget):
 
         self.case: list = [(0, 'Q'), (S, 'R'), (S * 2, 'N'), (S * 3, 'B')] if self.color == 'w' else [(0, 'B'), (S, 'N'), (S * 2, 'R'), (S * 3, 'Q')]
         for _tuple in self.case:
-            new_label(0, _tuple[0], S, S, 'grs', self).show()
-            new_label(0, _tuple[0], S, S, self.color + _tuple[1], self).show()
+            image_label(0, _tuple[0], S, S, 'grs', self).show()
+            image_label(0, _tuple[0], S, S, self.color + _tuple[1], self).show()
 
         self.move(self.y * S, 0) if self.color == 'w' else self.move(self.y * S, S * 4)
         self.setFixedSize(QSize(S, S * 4))
@@ -230,7 +230,7 @@ class Promotion(QWidget):
     def promotional_replacement(self, _piece: str):
         self.window.chess.chessboard[self.x][self.y] = _piece
         self.window.label.pieces[self.x][self.y].hide()
-        self.window.label.pieces[self.x][self.y] = new_label(self.y * S, self.x * S, S, S, _piece, self.window)
+        self.window.label.pieces[self.x][self.y] = image_label(self.y * S, self.x * S, S, S, _piece, self.window)
         self.window.label.pieces[self.x][self.y].show()
         if self.window.end_game_procedures():
             self.window.play_sound('check')
@@ -255,7 +255,7 @@ class Label:
             _background.append([])
             for x in range(len(chess.chessboard)):
                 _background[y].append(
-                    new_label(x * S, y * S, S, S, 'gs' if (y + x) % 2 else 'ws', window))
+                    image_label(x * S, y * S, S, S, 'gs' if (y + x) % 2 else 'ws', window))
                 _background[y][x].show()
         return _background
 
@@ -267,7 +267,7 @@ class Label:
             for x in range(len(chess.chessboard)):
                 _pieces[y].append(QLabel(parent=window))
                 if chess.chessboard[y][x] != '--':
-                    _pieces[y][x] = new_label(x * S, y * S, S, S, chess.chessboard[y][x], window)
+                    _pieces[y][x] = image_label(x * S, y * S, S, S, chess.chessboard[y][x], window)
                     _pieces[y][x].show()
         return _pieces
 
@@ -277,7 +277,7 @@ class Label:
         for y in range(len(chess.chessboard)):
             indicators.append([])
             for x in range(len(chess.chessboard)):
-                indicators[y].append(new_label(x * S, y * S, S, S, label, window))
+                indicators[y].append(image_label(x * S, y * S, S, S, label, window))
                 indicators[y][x].hide()
         return indicators
 

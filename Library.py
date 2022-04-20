@@ -1,11 +1,10 @@
 from PyQt5.QtWidgets import QWidget, QLabel
-from PyQt5.QtGui import QPixmap, QImage, QPalette, QBrush
+from PyQt5.QtGui import QPixmap, QImage, QPalette, QBrush, QFont
 from PyQt5.QtCore import Qt, QSize
 from datetime import datetime, timedelta
 from string import ascii_lowercase
 from typing import Final
 from enum import Enum
-from time import sleep
 import operator
 import os
 
@@ -59,11 +58,22 @@ def set_exists(_set: set) -> set:
     return __set
 
 
-def new_label(x: int, y: int, width: int, height: int, img: str, window: QWidget) -> QLabel:
+def image_label(x: int, y: int, width: int, height: int, img: str, window: QWidget) -> QLabel:
     label = QLabel(parent=window)
     label.setPixmap(QPixmap(image(img)).scaled(S, S, Qt.KeepAspectRatio, Qt.SmoothTransformation))
     label.resize(width, height)
     label.move(x, y)
+    return label
+
+
+def text_label(symbol: str, alignment, position: tuple, size: QSize, window: QWidget) -> QLabel:
+    label: QLabel = QLabel(parent=window)
+    label.setText(symbol)
+    label.setFixedSize(size)
+    label.setAlignment(alignment)
+    label.setFont(QFont('Arial', FS))
+    label.setStyleSheet('color: gray')
+    label.move(position[0], position[1])
     return label
 
 
@@ -96,10 +106,5 @@ def true_list(guy: list) -> bool:
     return True
 
 
-def countdown(amount: int = 600, label: QLabel = None) -> None:
-    while amount:
-        minutes, seconds = divmod(amount, 60)
-        timer: str = '{:02d}:{:02d}'.format(minutes, seconds)
-        label.setText(timer)
-        sleep(1)
-        amount -= 1
+def time_to_int(_time: str) -> int:
+    return int(_time[:2]) * 60 + int(_time[2:])

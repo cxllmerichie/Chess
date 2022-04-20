@@ -1,17 +1,14 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QMessageBox
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QFont
-from Library import S, FS, new_palette, RetVal, countdown
+from Library import S, FS, new_palette, RetVal, time_to_int, text_label
 from string import ascii_uppercase
 from ChessGUI import ChessGUI
 from threading import Thread
+from time import sleep
 
 
 class ChessGame(QWidget):
-    white_timer: QLabel
-    black_timer: QLabel
-    timer_thread: dict = {}
-
     def __init__(self, log_file):
         super(ChessGame, self).__init__()
         self.setWindowTitle('Chess')
@@ -20,28 +17,29 @@ class ChessGame(QWidget):
 
         self.hints()
         self.buttons()
-        self.timer()
+
+        self.timers: dict = {'w': Timer(text_label("10:00", Qt.AlignHCenter | Qt.AlignVCenter, (0, 0), QSize(S, S), self)),
+                             'b': Timer(text_label("10:00", Qt.AlignHCenter | Qt.AlignVCenter, (S * 9, 0), QSize(S, S), self))}
 
         self.chessgui = ChessGUI(self, log_file)
         self.chessgui.installEventFilter(self.chessgui)
         self.show()
 
-    def hint(self, symbol: str, alignment, position: tuple, size: QSize) -> QLabel:
-        label = QLabel(self)
-        label.setText(symbol)
-        label.setFixedSize(size)
-        label.setAlignment(alignment)
-        label.setFont(QFont('Arial', FS))
-        label.setStyleSheet('color: gray')
-        label.move(position[0], position[1])
-        return label
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, 'Window Close', 'Are you sure you want to close the window?',
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+
+            event.accept()
+        else:
+            event.ignore()
 
     def hints(self):
         for i in range(1, 9, 1):
-            self.hint(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignBottom, (i * S, 0), QSize(S, S)).show()
-            self.hint(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignTop, (S * i, S * 9), QSize(S, S)).show()
-            self.hint(str(9 - i), Qt.AlignVCenter | Qt.AlignLeft, (S * 9 + 0.1 * S, S * i), QSize(0.9 * S, S)).show()
-            self.hint(str(9 - i), Qt.AlignVCenter | Qt.AlignRight, (0, S * i), QSize(0.9 * S, S)).show()
+            text_label(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignBottom, (i * S, 0), QSize(S, S), self).show()
+            text_label(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignTop, (S * i, S * 9), QSize(S, S), self).show()
+            text_label(str(9 - i), Qt.AlignVCenter | Qt.AlignLeft, (S * 9 + 0.1 * S, S * i), QSize(0.9 * S, S), self).show()
+            text_label(str(9 - i), Qt.AlignVCenter | Qt.AlignRight, (0, S * i), QSize(0.9 * S, S), self).show()
 
     def button(self, title: str, geometry: tuple, click) -> QPushButton:
         button = QPushButton(title, self)
@@ -63,6 +61,12 @@ class ChessGame(QWidget):
         self.button('Mute', (S * 9, S * 10 - S / 4, S, S / 4),
                     lambda: self.chessgui.player.setVolume(0 if self.chessgui.player.volume() != 0 else 100)).show()
 
+        # Timer
+        self.button('Pause', (S * 3, S * 9 + S / 2, S, S / 2),
+                    lambda: self.pause_timer('w')).show()
+        self.button('Resume', (S * 4, S * 9 + S / 2, S, S / 2),
+                    lambda: self.resume_timer('w')).show()
+
     def message(self, icon_type, title: str, text: str) -> None:
         msg = QMessageBox()
         msg.setIcon(icon_type)
@@ -72,21 +76,31 @@ class ChessGame(QWidget):
         if msg.exec_() == RetVal.Yes.value:
             self.chessgui.enable_mouse_click = False
 
-    def timer(self) -> None:
-        self.white_timer = self.hint("00:00", Qt.AlignHCenter | Qt.AlignVCenter, (0, 0), QSize(S, S))
-        self.black_timer = self.hint("00:00", Qt.AlignHCenter | Qt.AlignVCenter, (S * 9, 0), QSize(S, S))
-        self.white_timer.show()
-        self.black_timer.show()
-        self.timer_thread: dict = {'w': Thread(target=lambda: countdown(amount=600, label=self.white_timer)),
-                                   'b': Thread(target=lambda: countdown(amount=600, label=self.black_timer))}
-        self.timer_thread['w'].start()
-        self.timer_thread['b'].start()
 
-    def pause_timer(self, timer: str) -> None:
-        self.timer_thread[timer].paused = True
-        self.timer_thread[timer].pause_cond.acquire()
+class Timer:
+    def __init__(self, label: QLabel):
+        self.label = label
+        self.time: str = '10:00'
+        self.status: bool = True
+        self.thread: Thread = Thread(target=lambda: self.countdown(amount=time_to_int(self.time), label=self.label))
 
-    def resume_timer(self, timer: str) -> None:
-        self.timer_thread[timer].paused = False
-        self.timer_thread[timer].pause_cond.notify()
-        self.timer_thread[timer].pause_cond.release()
+    def countdown(self, amount: int = 600, label: QLabel = None) -> None:
+        while amount:
+            if not self.status:
+                break
+            minutes, seconds = divmod(amount, 60)
+            timer: str = '{:02d}:{:02d}'.format(minutes, seconds)
+            label.setText(timer)
+            sleep(1)
+            amount -= 1
+
+    def start(self):
+        self.thread.start()
+
+    def stop(self):
+        self.time = self.label.text()
+        self.status = False
+
+    def run(self):
+        self.thread: Thread = Thread(target=lambda: self.countdown(amount=600, label=self.label))
+        self.status: bool = True
