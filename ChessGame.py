@@ -15,31 +15,34 @@ class ChessGame(QWidget):
         self.setFixedSize(QSize(S * 10, S * 10))
         self.setPalette(new_palette('background'))
 
-        self.hints()
+        self.text_labels()
         self.buttons()
 
-        self.timers: dict = {'w': Timer(text_label("10:00", Qt.AlignHCenter | Qt.AlignVCenter, (0, 0), QSize(S, S), self)),
-                             'b': Timer(text_label("10:00", Qt.AlignHCenter | Qt.AlignVCenter, (S * 9, 0), QSize(S, S), self))}
+        self.timers: dict = {'w': Timer(text_label('10:00', Qt.AlignHCenter | Qt.AlignVCenter, (0, 0), QSize(S, S), self)),
+                             'b': Timer(text_label('10:00', Qt.AlignHCenter | Qt.AlignVCenter, (S * 9, 0), QSize(S, S), self))}
+        self.timers['w'].start()
+        self.timers['b'].start()
 
         self.chessgui = ChessGUI(self, log_file)
         self.chessgui.installEventFilter(self.chessgui)
         self.show()
 
     def closeEvent(self, event):
-        reply = QMessageBox.question(self, 'Window Close', 'Are you sure you want to close the window?',
+        reply = QMessageBox.question(self, 'Exit', 'Close the application?',
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
-
+            self.timers['w'].stop()
+            self.timers['b'].stop()
             event.accept()
         else:
             event.ignore()
 
-    def hints(self):
+    def text_labels(self):
         for i in range(1, 9, 1):
-            text_label(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignBottom, (i * S, 0), QSize(S, S), self).show()
-            text_label(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignTop, (S * i, S * 9), QSize(S, S), self).show()
-            text_label(str(9 - i), Qt.AlignVCenter | Qt.AlignLeft, (S * 9 + 0.1 * S, S * i), QSize(0.9 * S, S), self).show()
-            text_label(str(9 - i), Qt.AlignVCenter | Qt.AlignRight, (0, S * i), QSize(0.9 * S, S), self).show()
+            text_label(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignBottom, (i * S, 0), QSize(S, S), self)#.show()
+            text_label(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignTop, (S * i, S * 9), QSize(S, S), self)#.show()
+            text_label(str(9 - i), Qt.AlignVCenter | Qt.AlignLeft, (S * 9 + 0.1 * S, S * i), QSize(0.9 * S, S), self)#.show()
+            text_label(str(9 - i), Qt.AlignVCenter | Qt.AlignRight, (0, S * i), QSize(0.9 * S, S), self)#.show()
 
     def button(self, title: str, geometry: tuple, click) -> QPushButton:
         button = QPushButton(title, self)
@@ -51,21 +54,23 @@ class ChessGame(QWidget):
 
     def buttons(self):
         self.button('Draw by agreement', (S, S * 9 + S / 2, S * 2, S / 4),
-                    lambda: self.message(QMessageBox.Question, "Draw by agreement", "Do you agree for a draw?")).show()
+                    lambda: self.message(QMessageBox.Question, 'Draw by agreement', 'Do you agree for a draw?'))#.show()
         self.button('Resign', (S, S * 9 + S / 2 + S / 4, S * 2, S / 4),
-                    lambda: self.message(QMessageBox.Warning, "Resignation", "Do you want to resign?")).show()
+                    lambda: self.message(QMessageBox.Warning, 'Resignation', 'Do you want to resign?'))#.show()
         self.button('VolumeUp', (S * 9, S * 9 + S / 4, S, S / 4),
-                    lambda: self.chessgui.player.setVolume(self.chessgui.player.volume() + 10)).show()
+                    lambda: self.chessgui.player.setVolume(self.chessgui.player.volume() + 10))#.show()
         self.button('VolumeDown', (S * 9, S * 10 - S / 2, S, S / 4),
-                    lambda: self.chessgui.player.setVolume(self.chessgui.player.volume() - 10)).show()
+                    lambda: self.chessgui.player.setVolume(self.chessgui.player.volume() - 10))#.show()
         self.button('Mute', (S * 9, S * 10 - S / 4, S, S / 4),
-                    lambda: self.chessgui.player.setVolume(0 if self.chessgui.player.volume() != 0 else 100)).show()
+                    lambda: self.chessgui.player.setVolume(0 if self.chessgui.player.volume() != 0 else 100))#.show()
 
         # Timer
         self.button('Pause', (S * 3, S * 9 + S / 2, S, S / 2),
-                    lambda: self.pause_timer('w')).show()
+                    lambda: (self.timers['w'].pause(), self.timers['b'].pause())
+                    )#.show()
         self.button('Resume', (S * 4, S * 9 + S / 2, S, S / 2),
-                    lambda: self.resume_timer('w')).show()
+                    lambda: (self.timers['w'].resume(), self.timers['b'].resume())
+                    )#.show()
 
     def message(self, icon_type, title: str, text: str) -> None:
         msg = QMessageBox()
@@ -79,7 +84,7 @@ class ChessGame(QWidget):
 
 class Timer:
     def __init__(self, label: QLabel):
-        self.label = label
+        self.label: QLabel = label
         self.time: str = '10:00'
         self.status: bool = True
         self.thread: Thread = Thread(target=lambda: self.countdown(amount=time_to_int(self.time), label=self.label))
@@ -98,9 +103,15 @@ class Timer:
         self.thread.start()
 
     def stop(self):
+        self.status = False
+        self.thread.join()
+
+    def pause(self):
         self.time = self.label.text()
         self.status = False
+        self.thread.join()
 
-    def run(self):
-        self.thread: Thread = Thread(target=lambda: self.countdown(amount=600, label=self.label))
+    def resume(self):
+        self.thread: Thread = Thread(target=lambda: self.countdown(amount=time_to_int(self.time), label=self.label))
         self.status: bool = True
+        self.start()

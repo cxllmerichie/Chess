@@ -107,4 +107,4 @@ def true_list(guy: list) -> bool:
 
 
 def time_to_int(_time: str) -> int:
-    return int(_time[:2]) * 60 + int(_time[2:])
+    return int(_time[:2]) * 60 + int(_time[3:])
