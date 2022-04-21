@@ -77,8 +77,8 @@ def text_label(symbol: str, alignment, position: tuple, size: QSize, window: QWi
     return label
 
 
-def new_palette(image: str, width: int = S * 10, height: int = S * 10) -> QPalette:
-    img = QImage('Images/Standard/'+image+'.png').scaled(QSize(width, height))
+def new_palette(img: str, width: int = S * 10, height: int = S * 10) -> QPalette:
+    img = QImage('Images/Standard/' + img + '.png').scaled(QSize(width, height))
     palette = QPalette()
     palette.setBrush(QPalette.Window, QBrush(img))
     return palette
@@ -99,8 +99,8 @@ def create_square_names() -> list:
     return square_names
 
 
-def true_list(guy: list) -> bool:
-    for _bool in guy:
+def true_list(_list: list) -> bool:
+    for _bool in _list:
         if not _bool:
             return False
     return True

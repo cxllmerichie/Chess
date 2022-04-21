@@ -1,4 +1,4 @@
-# ToDo: player1 & player2 control (sequence 1,2,1,2,1,2...)
+# ToDo: player1 & player2 sequence
 # ToDo: AI algorithm
 # ToDo: multiplayer protocol
 # ToDo: vocal assistant

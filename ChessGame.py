@@ -28,8 +28,7 @@ class ChessGame(QWidget):
         self.show()
 
     def closeEvent(self, event):
-        reply = QMessageBox.question(self, 'Exit', 'Close the application?',
-                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        reply = QMessageBox.question(self, 'Exit', 'Close the application?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.timers['w'].stop()
             self.timers['b'].stop()
@@ -64,7 +63,7 @@ class ChessGame(QWidget):
         self.button('Mute', (S * 9, S * 10 - S / 4, S, S / 4),
                     lambda: self.chessgui.player.setVolume(0 if self.chessgui.player.volume() != 0 else 100))#.show()
 
-        # Timer
+        # Timer (temporary)
         self.button('Pause', (S * 3, S * 9 + S / 2, S, S / 2),
                     lambda: (self.timers['w'].pause(), self.timers['b'].pause())
                     )#.show()

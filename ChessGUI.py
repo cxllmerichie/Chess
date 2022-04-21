@@ -111,8 +111,10 @@ class ChessGUI(QWidget):
             elif x1 == 0 and y1 == 4 and x2 == 0 and y2 == 2:
                 rp, ep = [0, 0], [0, 3]
         if len(rp) == len(ep) == 2:
-            self.chess.chessboard[ep[0]][ep[1]], self.chess.chessboard[rp[0]][rp[1]] = self.chess.chessboard[rp[0]][rp[1]], self.chess.chessboard[ep[0]][ep[1]]
-            self.label.pieces[ep[0]][ep[1]], self.label.pieces[rp[0]][rp[1]] = self.label.pieces[rp[0]][rp[1]], self.label.pieces[ep[0]][ep[1]]
+            self.chess.chessboard[ep[0]][ep[1]], self.chess.chessboard[rp[0]][rp[1]] =\
+                self.chess.chessboard[rp[0]][rp[1]], self.chess.chessboard[ep[0]][ep[1]]
+            self.label.pieces[ep[0]][ep[1]], self.label.pieces[rp[0]][rp[1]] =\
+                self.label.pieces[rp[0]][rp[1]], self.label.pieces[ep[0]][ep[1]]
             self.label.pieces[ep[0]][ep[1]].move(ep[1] * S, ep[0] * S)
             self.sound = 'castling'
             return True
@@ -131,7 +133,8 @@ class ChessGUI(QWidget):
         return False
 
     def move_piece(self) -> None:
-        self.chess.chessboard[x2][y2], self.chess.chessboard[x1][y1] = self.chess.chessboard[x1][y1], self.chess.chessboard[x2][y2]
+        self.chess.chessboard[x2][y2], self.chess.chessboard[x1][y1] =\
+            self.chess.chessboard[x1][y1], self.chess.chessboard[x2][y2]
         self.move_piece_label()
 
     def move_piece_label(self) -> None:
@@ -148,12 +151,8 @@ class ChessGUI(QWidget):
     def update_log(self) -> None:
         global turn
         turn += 1
-        self.log_file.write(
-            str(turn) + '. ' +
-            self.chess.chessboard[x2][y2] + ' ' +
-            self.chess.square_names[x1][y1] + '->' +
-            self.chess.square_names[x2][y2] + '\n'
-        )
+        self.log_file.write(str(turn) + '. ' + self.chess.chessboard[x2][y2] + ' ' +
+                            self.chess.square_names[x1][y1] + '->' + self.chess.square_names[x2][y2] + '\n')
 
     # END-GAME procedures
     def end_game_procedures(self) -> bool:

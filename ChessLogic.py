@@ -1,4 +1,4 @@
-from Library import exists, exist, operate, set_exists, create_square_names, true_list
+from Library import exists, exist, set_exists, operate, create_square_names, true_list
 
 
 class ChessLogic:
@@ -24,17 +24,17 @@ class ChessLogic:
         return -1, -1
 
     def empty_move_set_for(self, color: str) -> bool:
-        ms = set()
+        ms: set = set()
         for r in range(len(self.chessboard)):
             for c in range(len(self.chessboard)):
                 if self.chessboard[r][c][0] == color:
-                    tmp: set = Position(self.chessboard, r, c, self.last_move).move_set()
-                    tmp = self.prevent_the_check(r, c, tmp)
-                    ms.update(tmp)
+                    _ms: set = Position(self.chessboard, r, c, self.last_move).move_set()
+                    _ms = self.prevent_the_check(r, c, _ms)
+                    ms.update(_ms)
         return len(ms) == 0
 
     def move_set_for(self, color: str):
-        ms = set()
+        ms: set = set()
         for r in range(len(self.chessboard)):
             for c in range(len(self.chessboard)):
                 if self.chessboard[r][c][0] == color:
@@ -44,9 +44,9 @@ class ChessLogic:
     def is_check_for(self, color: str) -> bool:
         return self.position(color + 'K') in (self.move_set_for('b') if color == 'w' else self.move_set_for('w'))
 
-    def prevent_the_check(self, x, y, ms: set):
-        vms = set()
-        for p in ms:
+    def prevent_the_check(self, x, y, _ms: set):
+        ms: set = set()
+        for p in _ms:
             p1, p2 = self.chessboard[x][y], self.chessboard[p[0]][p[1]]
             if p2 == '--':
                 self.chessboard[x][y], self.chessboard[p[0]][p[1]] = self.chessboard[p[0]][p[1]], self.chessboard[x][y]
@@ -54,25 +54,30 @@ class ChessLogic:
                 self.chessboard[p[0]][p[1]] = self.chessboard[x][y]
                 self.chessboard[x][y] = '--'
             if not self.is_check_for(self.chessboard[p[0]][p[1]][0]):
-                vms.add(p)
+                ms.add(p)
             self.chessboard[x][y], self.chessboard[p[0]][p[1]] = p1, p2
-        return vms
+        return ms
 
-    def move_set(self, x: int, y: int) -> set:
-        move_set: set = Position(self.chessboard, x, y, self.last_move).move_set()
+    def castling_procedure(self, _set: set, x: int, y: int) -> set:
         self.castling.update(self.chessboard, self.move_set_for)
+        ms: set = _set
         if self.chessboard[x][y] == 'wK':
             if true_list(self.castling.long_w):
-                move_set.add((7, 2))
+                ms.add((7, 2))
             if true_list(self.castling.short_w):
-                move_set.add((7, 6))
+                ms.add((7, 6))
         elif self.chessboard[x][y] == 'bK':
             if true_list(self.castling.long_b):
-                move_set.add((0, 2))
+                ms.add((0, 2))
             if true_list(self.castling.short_b):
-                move_set.add((0, 6))
-        move_set = self.prevent_the_check(x, y, move_set)
-        return move_set
+                ms.add((0, 6))
+        return ms
+
+    def move_set(self, x: int, y: int) -> set:
+        ms: set = Position(self.chessboard, x, y, self.last_move).move_set()
+        ms = self.castling_procedure(ms, x, y)
+        ms = self.prevent_the_check(x, y, ms)
+        return ms
 
 
 class Position:
@@ -85,23 +90,23 @@ class Position:
         self.last_move: list = last_move
 
     def move_set(self) -> set:
-        _set = set()
+        ms: set = set()
         if self.piece == 'p':
-            _set = self.pawn()
+            ms = self.pawn()
         elif self.piece == 'R':
-            _set = self.rook()
+            ms = self.rook()
         elif self.piece == 'N':
-            _set = self.knight()
+            ms = self.knight()
         elif self.piece == 'B':
-            _set = self.bishop()
+            ms = self.bishop()
         elif self.piece == 'Q':
-            _set = self.queen()
+            ms = self.queen()
         elif self.piece == 'K':
-            _set = self.king()
-        return set_exists(_set)
+            ms = self.king()
+        return set_exists(ms)
 
     def pawn(self) -> set:
-        ms = set()
+        ms: set = set()
         opponents = 'w' if self.color == 'b' else 'b'
         operator = '+' if self.color == 'b' else '-'
         x1, x2 = operate(self.x, operator, 1), operate(self.x, operator, 2)
@@ -132,48 +137,35 @@ class Position:
         return ms
 
     def rook(self) -> set:
-        ms = set()
-
-        up_down: list = [(self.x - 1, -1, -1), (self.x + 1, len(self.chessboard), 1)]
-        for _range in up_down:
+        ms: set = set()
+        ranges: list = [(self.x - 1, -1, -1), (self.x + 1, len(self.chessboard), 1),
+                        (self.y + 1, len(self.chessboard), 1), (self.y - 1, -1, -1)]
+        for index, _range in enumerate(ranges):
             for c in range(_range[0], _range[1], _range[2]):
-                if self.chessboard[c][self.y][0] == self.color:
+                xy = (c, self.y) if index < 2 else (self.x, c)
+                if self.chessboard[xy[0]][xy[1]][0] == self.color:
                     break
-                ms.add((c, self.y))
-                if self.chessboard[c][self.y] != '--':
-                    break
-
-        right_left: list = [(self.y + 1, len(self.chessboard), 1), (self.y - 1, -1, -1)]
-        for _range in right_left:
-            for c in range(_range[0], _range[1], _range[2]):
-                if self.chessboard[self.x][c][0] == self.color:
-                    break
-                ms.add((self.x, c))
-                if self.chessboard[self.x][c] != '--':
+                ms.add((xy[0], xy[1]))
+                if self.chessboard[xy[0]][xy[1]] != '--':
                     break
         return ms
 
     def knight(self) -> set:
-        ms = set()
-        tmp = [(self.x - 2, self.y - 1),
-               (self.x - 2, self.y + 1),
-               (self.x + 2, self.y - 1),
-               (self.x + 2, self.y + 1),
-               (self.x - 1, self.y - 2),
-               (self.x - 1, self.y + 2),
-               (self.x + 1, self.y - 2),
-               (self.x + 1, self.y + 2)]
-        for point in tmp:
+        ms: set = set()
+        points: list = [(self.x - 2, self.y - 1), (self.x - 2, self.y + 1), (self.x + 2, self.y - 1),
+                        (self.x + 2, self.y + 1), (self.x - 1, self.y - 2), (self.x - 1, self.y + 2),
+                        (self.x + 1, self.y - 2), (self.x + 1, self.y + 2)]
+        for point in points:
             if exist(point) and self.chessboard[point[0]][point[1]][0] != self.color:
                 ms.add((point[0], point[1]))
         return ms
 
     def bishop(self) -> set:
-        ms = set()
-        tmp = [('+', '+'), ('-', '+'), ('+', '-'), ('-', '-')]
-        for op in tmp:
+        ms: set = set()
+        operations = [('+', '+'), ('-', '+'), ('+', '-'), ('-', '-')]
+        for operation in operations:
             for c in range(1, 8, 1):
-                x, y = operate(self.x, op[0], c), operate(self.y, op[1], c)
+                x, y = operate(self.x, operation[0], c), operate(self.y, operation[1], c)
                 if x < 8 and y < 8:
                     if self.chessboard[x][y][0] == self.color:
                         break
@@ -186,16 +178,11 @@ class Position:
         return self.bishop().union(self.rook())
 
     def king(self) -> set:
-        ms = set()
-        tmp = [(self.x, self.y + 1),
-               (self.x, self.y - 1),
-               (self.x + 1, self.y),
-               (self.x - 1, self.y),
-               (self.x + 1, self.y + 1),
-               (self.x + 1, self.y - 1),
-               (self.x - 1, self.y - 1),
-               (self.x - 1, self.y + 1)]
-        for point in tmp:
+        ms: set = set()
+        points: list = [(self.x, self.y + 1), (self.x, self.y - 1), (self.x + 1, self.y),
+                        (self.x - 1, self.y), (self.x + 1, self.y + 1), (self.x + 1, self.y - 1),
+                        (self.x - 1, self.y - 1), (self.x - 1, self.y + 1)]
+        for point in points:
             if exist(point) and self.chessboard[point[0]][point[1]][0] != self.color:
                 ms.add((point[0], point[1]))
         return ms
@@ -242,7 +229,7 @@ class Castling:
             self.long_w[0] = False
             self.short_w[0] = False
 
-    def update(self, chessboard: list, cms) -> None:
+    def update(self, chessboard: list, move_set_for) -> None:
         self.clear_way(chessboard)
-        self.safe_position(cms('b'), cms('w'))
+        self.safe_position(move_set_for('b'), move_set_for('w'))
         self.not_moved_pieces(chessboard)
