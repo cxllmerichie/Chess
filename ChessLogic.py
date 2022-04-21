@@ -133,6 +133,7 @@ class Position:
 
     def rook(self) -> set:
         ms = set()
+
         up_down: list = [(self.x - 1, -1, -1), (self.x + 1, len(self.chessboard), 1)]
         for _range in up_down:
             for c in range(_range[0], _range[1], _range[2]):
@@ -141,6 +142,7 @@ class Position:
                 ms.add((c, self.y))
                 if self.chessboard[c][self.y] != '--':
                     break
+
         right_left: list = [(self.y + 1, len(self.chessboard), 1), (self.y - 1, -1, -1)]
         for _range in right_left:
             for c in range(_range[0], _range[1], _range[2]):
@@ -207,35 +209,40 @@ class Castling:
         self.short_w = [True, True, True]
         self.short_b = [True, True, True]
 
-    def safe_position(self, bms: set, wms: set):
+    def safe_position(self, bms: set, wms: set) -> None:
         self.long_w[2] = False if (7, 3) in bms or (7, 2) in bms else True
         self.short_w[2] = False if (7, 5) in bms or (7, 6) in bms else True
         self.long_b[2] = False if (0, 3) in wms or (0, 2) in wms else True
         self.short_b[2] = False if (0, 5) in wms or (0, 6) in wms else True
 
-    def clear_way(self, chessboard: list):
+    def clear_way(self, chessboard: list) -> None:
         self.long_w[1] = False if chessboard[7][1] != '--' or chessboard[7][2] != '--' or chessboard[7][3] != '--' else True
         self.short_w[1] = False if chessboard[7][5] != '--' or chessboard[7][6] != '--' else True
         self.long_b[1] = False if chessboard[0][1] != '--' or chessboard[0][2] != '--' or chessboard[0][3] != '--' else True
         self.short_b[1] = False if chessboard[0][5] != '--' or chessboard[0][6] != '--' else True
 
-    def not_moved_pieces(self, chessboard: list):
+    def not_moved_pieces(self, chessboard: list) -> None:
         if chessboard[0][4] != 'bK':
             self.long_b[0] = False
             self.short_b[0] = False
+            return None
         if chessboard[0][0] != 'bR':
             self.long_b[0] = False
+            return None
         if chessboard[0][7] != 'bR':
             self.short_b[0] = False
+            return None
         if chessboard[7][0] != 'wR':
             self.long_w[0] = False
+            return None
         if chessboard[7][7] != 'wR':
             self.short_w[0] = False
+            return None
         if chessboard[7][4] != 'wK':
             self.long_w[0] = False
             self.short_w[0] = False
 
-    def update(self, chessboard: list, cms):
+    def update(self, chessboard: list, cms) -> None:
         self.clear_way(chessboard)
         self.safe_position(cms('b'), cms('w'))
         self.not_moved_pieces(chessboard)

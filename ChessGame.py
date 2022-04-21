@@ -79,7 +79,12 @@ class ChessGame(QWidget):
         msg.setWindowTitle(title)
         msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         if msg.exec_() == RetVal.Yes.value:
-            self.chessgui.enable_mouse_click = False
+            self.end_game()
+
+    def end_game(self):
+        self.chessgui.enable_mouse_click = False
+        self.timers['w'].stop()
+        self.timers['b'].stop()
 
 
 class Timer:
