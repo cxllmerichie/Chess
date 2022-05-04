@@ -5,11 +5,16 @@ from datetime import datetime, timedelta
 from string import ascii_lowercase
 from typing import Final
 from enum import Enum
+from pyautogui import size
 import operator
 import os
 
+# S: Final = 90
+COEFFICIENT: Final = 15
+width, height = size()
 # label size
-S: Final = 90
+S: Final = int(height/COEFFICIENT//10*10) if height < width else int(width/COEFFICIENT//10*10)
+# font size
 FS: Final = int(S/4)
 
 
@@ -106,5 +111,6 @@ def true_list(_list: list) -> bool:
     return True
 
 
-def time_to_int(_time: str) -> int:
-    return int(_time[:2]) * 60 + int(_time[3:])
+def str_time_to_float(_time: str) -> float:
+    milliseconds: str = _time[6:]
+    return float(_time[:2]) * 60 + float(_time[3:5]) + (float(milliseconds)/1000 if len(milliseconds) != 0 else 0)

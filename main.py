@@ -1,7 +1,6 @@
-# ToDo: player1 & player2 sequence
 # ToDo: AI algorithm
 # ToDo: multiplayer protocol
-# ToDo: vocal assistant
+# ToDo: voice assistant
 # ToDo: main window
 # ToDo: winner / loser to log.txt
 # ToDo: log.txt to db

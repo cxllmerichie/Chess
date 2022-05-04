@@ -4,12 +4,8 @@ from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from ChessLogic import ChessLogic
 from Library import S, exist, image_label, sound, operate
 
-turn: int = 0
-x1 = y1 = x2 = y2 = 0
-move_buffer: list = []
-check_buffer: list = []
-position_buffer: list = []
-capture_buffer: list = []
+turn = x1 = y1 = x2 = y2 = 0
+move_buffer, check_buffer, position_buffer, capture_buffer = [], [], [], []
 
 
 class ChessGUI(QWidget):
@@ -33,18 +29,19 @@ class ChessGUI(QWidget):
     def mousePressEvent(self, click) -> None:
         global x1, x2, y1, y2, move_buffer
         if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // S][click.x() // S] == '--'):
-            move_buffer.append([click.y() // S, click.x() // S])
-            x1, y1 = move_buffer[0][0], move_buffer[0][1]
-            self.fill_buffers()
-            self.label.show_indicators()
-            if len(move_buffer) == 2:
-                x2, y2 = move_buffer[1][0], move_buffer[1][1]
-                is_moved: bool = self.move_action()
-                self.label.hide_indicators()
-                self.end_game_procedures()
-                if is_moved:
-                    self.chess.last_move = [(x1, y1), (x2, y2)]
-                    self.play_sound(self.sound)
+            if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // S][click.x() // S][0] == self.chess.chessboard[self.chess.last_move[1][0]][self.chess.last_move[1][1]][0]):
+                move_buffer.append([click.y() // S, click.x() // S])
+                x1, y1 = move_buffer[0][0], move_buffer[0][1]
+                self.fill_buffers()
+                self.label.show_indicators()
+                if len(move_buffer) == 2:
+                    x2, y2 = move_buffer[1][0], move_buffer[1][1]
+                    is_moved: bool = self.move_action()
+                    self.label.hide_indicators()
+                    self.end_game_procedures()
+                    if is_moved:
+                        self.chess.last_move = [(x1, y1), (x2, y2)]
+                        self.play_sound(self.sound)
 
     # @DECORATOR
     def eventFilter(self, obj, event) -> bool:
@@ -151,8 +148,7 @@ class ChessGUI(QWidget):
     def update_log(self) -> None:
         global turn
         turn += 1
-        self.log_file.write(str(turn) + '. ' + self.chess.chessboard[x2][y2] + ' ' +
-                            self.chess.square_names[x1][y1] + '->' + self.chess.square_names[x2][y2] + '\n')
+        self.log_file.write(f"{turn}. {self.chess.chessboard[x2][y2]} {self.chess.square_names[x1][y1]}->{self.chess.square_names[x2][y2]}\n")
 
     # END-GAME procedures
     def end_game_procedures(self) -> bool:

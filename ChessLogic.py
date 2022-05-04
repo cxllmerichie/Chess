@@ -162,8 +162,7 @@ class Position:
 
     def bishop(self) -> set:
         ms: set = set()
-        operations = [('+', '+'), ('-', '+'), ('+', '-'), ('-', '-')]
-        for operation in operations:
+        for operation in [('+', '+'), ('-', '+'), ('+', '-'), ('-', '-')]:
             for c in range(1, 8, 1):
                 x, y = operate(self.x, operation[0], c), operate(self.y, operation[1], c)
                 if x < 8 and y < 8:

@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QMessageBox
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QFont
-from Library import S, FS, new_palette, RetVal, time_to_int, text_label
+from Library import S, FS, new_palette, RetVal, str_time_to_float, text_label
 from string import ascii_uppercase
 from ChessGUI import ChessGUI
 from threading import Thread
@@ -20,18 +20,16 @@ class ChessGame(QWidget):
 
         self.timers: dict = {'w': Timer(text_label('10:00', Qt.AlignHCenter | Qt.AlignVCenter, (0, 0), QSize(S, S), self)),
                              'b': Timer(text_label('10:00', Qt.AlignHCenter | Qt.AlignVCenter, (S * 9, 0), QSize(S, S), self))}
-        self.timers['w'].start()
-        self.timers['b'].start()
 
         self.chessgui = ChessGUI(self, log_file)
         self.chessgui.installEventFilter(self.chessgui)
         self.show()
+        self.timers['w'].start()
 
     def closeEvent(self, event):
         reply = QMessageBox.question(self, 'Exit', 'Close the application?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
-            self.timers['w'].stop()
-            self.timers['b'].stop()
+            self.end_game()
             event.accept()
         else:
             event.ignore()
@@ -53,9 +51,9 @@ class ChessGame(QWidget):
 
     def buttons(self):
         self.button('Draw by agreement', (S, S * 9 + S / 2, S * 2, S / 4),
-                    lambda: self.message(QMessageBox.Question, 'Draw by agreement', 'Do you agree for a draw?'))#.show()
+                    lambda: self.end_game_message(QMessageBox.Question, 'Draw by agreement', 'Do you agree for a draw?'))#.show()
         self.button('Resign', (S, S * 9 + S / 2 + S / 4, S * 2, S / 4),
-                    lambda: self.message(QMessageBox.Warning, 'Resignation', 'Do you want to resign?'))#.show()
+                    lambda: self.end_game_message(QMessageBox.Warning, 'Resignation', 'Do you want to resign?'))#.show()
         self.button('VolumeUp', (S * 9, S * 9 + S / 4, S, S / 4),
                     lambda: self.chessgui.player.setVolume(self.chessgui.player.volume() + 10))#.show()
         self.button('VolumeDown', (S * 9, S * 10 - S / 2, S, S / 4),
@@ -63,15 +61,7 @@ class ChessGame(QWidget):
         self.button('Mute', (S * 9, S * 10 - S / 4, S, S / 4),
                     lambda: self.chessgui.player.setVolume(0 if self.chessgui.player.volume() != 0 else 100))#.show()
 
-        # Timer (temporary)
-        self.button('Pause', (S * 3, S * 9 + S / 2, S, S / 2),
-                    lambda: (self.timers['w'].pause(), self.timers['b'].pause())
-                    )#.show()
-        self.button('Resume', (S * 4, S * 9 + S / 2, S, S / 2),
-                    lambda: (self.timers['w'].resume(), self.timers['b'].resume())
-                    )#.show()
-
-    def message(self, icon_type, title: str, text: str) -> None:
+    def end_game_message(self, icon_type, title: str, text: str) -> None:
         msg = QMessageBox()
         msg.setIcon(icon_type)
         msg.setText(text)
@@ -89,33 +79,35 @@ class ChessGame(QWidget):
 class Timer:
     def __init__(self, label: QLabel):
         self.label: QLabel = label
-        self.time: str = '10:00'
-        self.status: bool = True
-        self.thread: Thread = Thread(target=lambda: self.countdown(amount=time_to_int(self.time), label=self.label))
+        self.time: str = '10:00:00'
+        self.status: bool = False
+        self.thread: Thread = Thread(target=lambda: self.countdown(amount=str_time_to_float(self.time), label=self.label))
 
-    def countdown(self, amount: int = 600, label: QLabel = None) -> None:
-        while amount:
-            if not self.status:
-                break
-            minutes, seconds = divmod(amount, 60)
-            timer: str = '{:02d}:{:02d}'.format(minutes, seconds)
-            label.setText(timer)
-            sleep(1)
-            amount -= 1
+    def countdown(self, amount: float = 600, label: QLabel = None) -> None:
+        period: float = 0.5
+        displayable_characters: int = 5
+        while amount > 0 and self.status:
+            minutes, seconds_milliseconds = divmod(amount, 60)
+            seconds, milliseconds = divmod(seconds_milliseconds, 1)
+            label.setText('{:02.0f}:{:02.0f}.{:02.0f}'.format(minutes, seconds, milliseconds * 1000)[:displayable_characters])
+            sleep(period)
+            amount -= period
 
     def start(self):
-        self.thread.start()
+        if not self.status:
+            self.status = True
+            self.thread.start()
 
     def stop(self):
-        self.status = False
-        self.thread.join()
+        if self.status:
+            self.status = False
+            self.thread.join()
 
     def pause(self):
         self.time = self.label.text()
-        self.status = False
-        self.thread.join()
+        self.stop()
 
     def resume(self):
-        self.thread: Thread = Thread(target=lambda: self.countdown(amount=time_to_int(self.time), label=self.label))
-        self.status: bool = True
+        if not self.status:
+            self.thread: Thread = Thread(target=lambda: self.countdown(amount=str_time_to_float(self.time), label=self.label))
         self.start()
