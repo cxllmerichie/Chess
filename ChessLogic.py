@@ -81,8 +81,8 @@ class ChessLogic:
 
 
 class Position:
-    def __init__(self, chessboard, x: int, y: int, last_move: list):
-        self.chessboard = chessboard
+    def __init__(self, chessboard: list, x: int, y: int, last_move: list):
+        self.chessboard: list = chessboard
         self.x: int = x
         self.y: int = y
         self.piece: str = self.chessboard[x][y][1]

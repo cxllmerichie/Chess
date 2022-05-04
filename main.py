@@ -15,7 +15,7 @@ from sys import argv
 if __name__ == '__main__':
     file = open('log.txt', "a")
     file.write(line(50))
-    file.write('Start: ' + date() + ' ' + time() + '\n')
+    file.write(f'Start: {date()} {time()}\n')
     start = default_timer()
 
     app = QApplication(argv)
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     app.exec()
 
     end = default_timer()
-    file.write('End: ' + date() + ' ' + time() + '\n')
-    file.write('Duration: ' + duration(start, end) + '\n')
+    file.write(f'End: {date()} {time()}\n')
+    file.write(f'Duration: {duration(start, end)}\n')
     file.write(line(50))
     file.close()
