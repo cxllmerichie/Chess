@@ -1,21 +1,11 @@
-from PyQt5.QtWidgets import QWidget, QLabel
+from PyQt5.QtWidgets import QWidget, QLabel, QPushButton
 from PyQt5.QtGui import QPixmap, QImage, QPalette, QBrush, QFont
 from PyQt5.QtCore import Qt, QSize
 from datetime import datetime, timedelta
 from string import ascii_lowercase
-from typing import Final
-from enum import Enum
-from pyautogui import size
+from Constants import S, FS, IMAGE_PATH
 import operator
-import os
-
-# S: Final = 90
-COEFFICIENT: Final = 15
-width, height = size()
-# label size
-S: Final = int(height/COEFFICIENT//10*10) if height < width else int(width/COEFFICIENT//10*10)
-# font size
-FS: Final = int(S/4)
+from os import path, getcwd
 
 
 def operate(left: int, _operator: str, right: int):
@@ -32,11 +22,11 @@ def exist(coordinates: tuple, start: int = 0, end: int = 8) -> bool:
 
 
 def image(name: str) -> str:
-    return 'Images/Standard/' + name + '.png'
+    return IMAGE_PATH + name + '.png'
 
 
 def sound(name: str) -> str:
-    return os.path.join(os.getcwd() + "/SoundEffects", name + '.mp3')
+    return path.join(getcwd() + "/SoundEffects", name + '.mp3')
 
 
 def time() -> str:
@@ -83,16 +73,19 @@ def text_label(symbol: str, alignment, position: tuple, size: QSize, window: QWi
 
 
 def new_palette(img: str, width: int = S * 10, height: int = S * 10) -> QPalette:
-    img = QImage('Images/Standard/' + img + '.png').scaled(QSize(width, height))
+    img = QImage(IMAGE_PATH + img).scaled(QSize(width, height))
     palette = QPalette()
     palette.setBrush(QPalette.Window, QBrush(img))
     return palette
 
 
-class RetVal(Enum):
-    # QMessageBox.exec_() values from buttons Yes & No
-    Yes = 16384
-    No = 65536
+def new_button(title: str, geometry: tuple, click, window: QWidget) -> QPushButton:
+    button = QPushButton(title, parent=window)
+    button.setGeometry(geometry[0], geometry[1], geometry[2], geometry[3])
+    button.setFont(QFont('Arial', FS / 2))
+    button.setStyleSheet('background: #323232')
+    button.clicked.connect(click)
+    return button
 
 
 def create_square_names() -> list:

@@ -2,16 +2,17 @@ from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import QSize, Qt, QEvent, QUrl
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from ChessLogic import ChessLogic
-from Library import S, exist, image_label, sound, operate
+from Library import exist, image_label, sound, operate
+from Constants import S
 
 turn = x1 = y1 = x2 = y2 = 0
 move_buffer, check_buffer, position_buffer, capture_buffer = [], [], [], []
 
 
 class ChessGUI(QWidget):
-    def __init__(self, window: QWidget, log_file):
-        super(ChessGUI, self).__init__(window)
-        self.player = QMediaPlayer()
+    def __init__(self, parent_window: QWidget, log_file):
+        super(ChessGUI, self).__init__(parent=parent_window)
+        self.audio_player = QMediaPlayer()
         self.sound: str = ''
         self.enable_mouse_click: bool = True
 
@@ -141,8 +142,8 @@ class ChessGUI(QWidget):
         move_buffer.clear()
 
     def play_sound(self, action: str):
-        self.player.setMedia(QMediaContent(QUrl.fromLocalFile(sound(action))))
-        self.player.play()
+        self.audio_player.setMedia(QMediaContent(QUrl.fromLocalFile(sound(action))))
+        self.audio_player.play()
 
     # game log
     def update_log(self) -> None:
