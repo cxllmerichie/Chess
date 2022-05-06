@@ -9,7 +9,8 @@ from time import sleep
 
 
 class ChessGame(QWidget):
-    def __init__(self, parent_window: QWidget, log_file):
+    #def __init__(self, parent_window: QWidget, log_file):
+    def __init__(self, parent_window: QWidget):
         super(ChessGame, self).__init__(parent=parent_window)
         self.setWindowFlag(Qt.FramelessWindowHint)
         self.setFixedSize(QSize(S * 10, S * 10))
@@ -20,7 +21,8 @@ class ChessGame(QWidget):
         self.timers: dict = {'w': Timer(text_label(GAME_TIME, Qt.AlignHCenter | Qt.AlignBottom, (S * 4, S * 9), QSize(S * 2, S), self)),
                              'b': Timer(text_label(GAME_TIME, Qt.AlignHCenter | Qt.AlignTop, (S * 4, 0), QSize(S * 2, S), self))}
 
-        self.chessgui = ChessGUI(self, log_file)
+        #self.chessgui = ChessGUI(self, log_file)
+        self.chessgui = ChessGUI(self)
         self.chessgui.installEventFilter(self.chessgui)
         self.hide()
 

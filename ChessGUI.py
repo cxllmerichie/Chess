@@ -10,7 +10,8 @@ move_buffer, check_buffer, position_buffer, capture_buffer = [], [], [], []
 
 
 class ChessGUI(QWidget):
-    def __init__(self, parent_window: QWidget, log_file):
+    #def __init__(self, parent_window: QWidget, log_file):
+    def __init__(self, parent_window: QWidget):
         super(ChessGUI, self).__init__(parent=parent_window)
         self.audio_player = QMediaPlayer()
         self.sound: str = ''
@@ -18,7 +19,7 @@ class ChessGUI(QWidget):
 
         self.chess = ChessLogic()
         self.label = Label(self, self.chess)
-        self.log_file = log_file
+        #self.log_file = log_file
         self.turn: int = 0
 
         self.move(S, S)
@@ -75,7 +76,7 @@ class ChessGUI(QWidget):
                 if not captured and not promoted:
                     self.is_en_passant()
             self.move_piece()
-            self.update_log()
+            #self.update_log()
             return True
         move_buffer.clear()
         return False
@@ -146,11 +147,11 @@ class ChessGUI(QWidget):
         self.audio_player.setMedia(QMediaContent(QUrl.fromLocalFile(sound(action))))
         self.audio_player.play()
 
-    # game log
+    """# game log
     def update_log(self) -> None:
         self.turn += 1
         self.log_file.write(f"{self.turn}. {self.chess.chessboard[x2][y2]} {self.chess.square_names[x1][y1]}->{self.chess.square_names[x2][y2]}\n")
-
+"""
     # END-GAME procedures
     def end_game_procedures(self) -> bool:
         if self.checkmate() or self.stalemate():

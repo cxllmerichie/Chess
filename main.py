@@ -9,9 +9,21 @@
 from PyQt5.QtWidgets import QApplication
 from Application import Application
 from sys import argv
+#from Network import Network
+from time import sleep
 
 
 if __name__ == '__main__':
+    #network = Network()
+
     app = QApplication(argv)
-    window = Application()
+    white = Application()
+    #white.update_game_state(network.get_game_state())
+
+    """while True:
+        sleep(0.5)
+        black = network.send(white.chessgame)
+        if not white.state:
+            break"""
+
     app.exec()

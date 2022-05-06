@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QLabel, QMessageBox, QMainWindow, QShortcut
+from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut
 from PyQt5.QtGui import QPixmap, QFont, QKeySequence
 from Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, S
 from Library import app_btn, time, date, line, duration
@@ -13,12 +13,17 @@ class Application(QMainWindow):
     background: QLabel
     singleplayer, multiplayer, settings, exit = None, None, None, None  # QPushButton
     full_screen_mode, close_application, back_to_menu = None, None, None  # QShortcut
-    chessgame: QWidget = None
-    log = open('log.txt', "a")
+
+    #log = open('log.txt', "a")
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('Chess')
+        self.setWindowTitle('Chess (Pre-Alpha)')
+
+        self.chessgame = ChessGame(self)
+        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2),
+                            int(self.height() / 2 - self.chessgame.height() / 2))
+        self.state: bool = True
 
         self.set_background()
         self.create_buttons()
@@ -29,23 +34,24 @@ class Application(QMainWindow):
         self.move(SW / 2 - self.width() / 2, SH / 2 - self.height() / 2)
         self.showNormal()
 
-    def start_log(self):
+    """def start_log(self):
         global start
         self.log.write(line(50))
         self.log.write(f'Start: {date()} {time()}\n')
-        start = default_timer()
+        start = default_timer()"""
 
-    def end_log(self):
+    """def end_log(self):
         global end
         end = default_timer()
         self.log.write(f'End: {date()} {time()}\n')
         self.log.write(f'Duration: {duration(start, end)}\n')
-        self.log.write(line(50))
+        self.log.write(line(50))"""
 
     def new_game(self):
-        self.start_log()
-        self.chessgame = ChessGame(self, self.log)
-        self.chessgame.move(self.width() / 2 - self.chessgame.width() / 2, self.height() / 2 - self.chessgame.height() / 2)
+        #self.start_log()
+        #self.chessgame = ChessGame(self, self.log)
+        self.chessgame = ChessGame(self)
+        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
 
     def set_shortcuts(self):
         self.full_screen_mode = QShortcut(QKeySequence('F11'), self)
@@ -58,12 +64,13 @@ class Application(QMainWindow):
         self.back_to_menu.activated.connect(lambda: self.go_back_to_menu())
 
     def go_back_to_menu_procedure(self):
-        self.end_log()
+        #self.end_log()
         self.chessgame.close()
         self.wallpaper = MENU_BACKGROUND
         self.resize_background()
         self.statusBar().show()
         self.show_buttons()
+        self.state = False
 
     def go_back_to_menu(self, with_reply: bool = True):
         if with_reply:
@@ -83,7 +90,7 @@ class Application(QMainWindow):
             if self.chessgame is not None:
                 self.chessgame.end_game()
                 self.go_back_to_menu(False)
-                self.log.close()
+                #self.log.close()
             event.accept()
         else:
             event.ignore()
@@ -91,7 +98,7 @@ class Application(QMainWindow):
     def resizeEvent(self, event):
         self.resize_buttons()
         if self.chessgame is not None:
-            self.chessgame.move(self.width() / 2 - self.chessgame.width() / 2, self.height() / 2 - self.chessgame.height() / 2)
+            self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
         self.resize_background()
 
     def set_status_bar(self):
@@ -140,3 +147,6 @@ class Application(QMainWindow):
         self.multiplayer = app_btn('Play vs Player', (self.width() / 2 - BW / 2, self.height() / 2, BW, BH), lambda: self.start_game(), self)
         self.settings = app_btn('Settings', (self.width() / 2 - BW / 2, self.height() / 2 + BH, BW, BH), lambda: None, self)
         self.exit = app_btn('Exit', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 2, BW, BH), lambda: self.close(), self)
+
+    def update_game_state(self, _chessgame: ChessGame):
+        self.chessgame = _chessgame
