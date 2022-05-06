@@ -5,7 +5,7 @@ from ChessLogic import ChessLogic
 from Library import exist, image_label, sound, operate
 from Constants import S
 
-turn = x1 = y1 = x2 = y2 = 0
+x1 = y1 = x2 = y2 = 0
 move_buffer, check_buffer, position_buffer, capture_buffer = [], [], [], []
 
 
@@ -19,6 +19,7 @@ class ChessGUI(QWidget):
         self.chess = ChessLogic()
         self.label = Label(self, self.chess)
         self.log_file = log_file
+        self.turn: int = 0
 
         self.move(S, S)
         self.setFixedSize(QSize(S * 8, S * 8))
@@ -147,9 +148,8 @@ class ChessGUI(QWidget):
 
     # game log
     def update_log(self) -> None:
-        global turn
-        turn += 1
-        self.log_file.write(f"{turn}. {self.chess.chessboard[x2][y2]} {self.chess.square_names[x1][y1]}->{self.chess.square_names[x2][y2]}\n")
+        self.turn += 1
+        self.log_file.write(f"{self.turn}. {self.chess.chessboard[x2][y2]} {self.chess.square_names[x1][y1]}->{self.chess.square_names[x2][y2]}\n")
 
     # END-GAME procedures
     def end_game_procedures(self) -> bool:

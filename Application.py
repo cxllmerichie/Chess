@@ -1,49 +1,110 @@
-from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QMessageBox, QMainWindow
-from PyQt5.QtGui import QPixmap, QFont
-from Constants import BH, BW, SW, SH, BACKGROUND, FS
-from Library import new_button
+from PyQt5.QtWidgets import QWidget, QLabel, QMessageBox, QMainWindow, QShortcut
+from PyQt5.QtGui import QPixmap, QFont, QKeySequence
+from Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, S
+from Library import app_btn
 from ChessGame import ChessGame
+from Library import time, date, line, duration
+from timeit import default_timer
+
+start, end = 0, 0
 
 
 class Application(QMainWindow):
+    wallpaper: str = MENU_BACKGROUND
     background: QLabel
-    singleplayer: QPushButton
-    multiplayer: QPushButton
-    settings: QPushButton
-    exit: QPushButton
+    singleplayer, multiplayer, settings, exit = None, None, None, None  # QPushButton
+    full_screen_mode, close_application, back_to_menu = None, None, None  # QShortcut
+    chessgame: QWidget = None
+    log = open('log.txt', "a")
 
-    def __init__(self, log_file):
+    def __init__(self):
         super().__init__()
         self.setWindowTitle('Chess')
 
         self.set_background()
         self.create_buttons()
         self.set_status_bar()
+        self.set_shortcuts()
 
-        self.chessgame: QWidget = ChessGame(self, log_file)
-        self.chessgame.move(self.width() / 2 - self.chessgame.width() / 2,
-                            self.height() / 2 - self.chessgame.height() / 2)
-
-        self.setMinimumSize(self.chessgame.width(), self.chessgame.height())
+        self.setMinimumSize(S*10, S*10)
         self.move(SW / 2 - self.width() / 2, SH / 2 - self.height() / 2)
         self.showNormal()
+
+    def start_log(self):
+        global start
+        self.log.write(line(50))
+        self.log.write(f'Start: {date()} {time()}\n')
+        start = default_timer()
+
+    def end_log(self):
+        global end
+        end = default_timer()
+        self.log.write(f'End: {date()} {time()}\n')
+        self.log.write(f'Duration: {duration(start, end)}\n')
+        self.log.write(line(50))
+
+    def new_game(self):
+        self.start_log()
+        self.chessgame = ChessGame(self, self.log)
+        self.chessgame.move(self.width() / 2 - self.chessgame.width() / 2, self.height() / 2 - self.chessgame.height() / 2)
+
+    def set_shortcuts(self):
+        self.full_screen_mode = QShortcut(QKeySequence('F11'), self)
+        self.full_screen_mode.activated.connect(lambda: self.go_full_screen_mode())
+
+        self.close_application = QShortcut(QKeySequence('Ctrl+E'), self)
+        self.close_application.activated.connect(lambda: self.close())
+
+        self.back_to_menu = QShortcut(QKeySequence('Ctrl+M'), self)
+        self.back_to_menu.activated.connect(lambda: self.go_back_to_menu())
+
+    def go_back_to_menu(self):
+        if self.wallpaper != MENU_BACKGROUND:
+            reply = QMessageBox.question(self, 'Menu', 'Return to menu?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                self.end_log()
+                self.chessgame.close()
+                self.wallpaper = MENU_BACKGROUND
+                self.resize_background()
+                self.show_buttons()
+
+    def go_full_screen_mode(self):
+        self.showNormal() if self.isFullScreen() else self.showFullScreen()
 
     def closeEvent(self, event):
         reply = QMessageBox.question(self, 'Exit', 'Close the application?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
-            self.chessgame.end_game()
+            if self.chessgame is not None:
+                self.chessgame.end_game()
+                self.log.close()
+            event.accept()
+        else:
+            event.ignore()
+
+    def resizeEvent(self, event):
+        self.resize_buttons()
+        if self.chessgame is not None:
+            self.chessgame.move(self.width() / 2 - self.chessgame.width() / 2, self.height() / 2 - self.chessgame.height() / 2)
+        self.resize_background()
 
     def set_status_bar(self):
         self.statusBar().setFont(QFont('Arial', int(FS / 2)))
         self.statusBar().setStyleSheet('color: white')
         self.statusBar().showMessage('Press F11 to enter fullscreen mode')
 
+    def resize_background(self):
+        self.background.setPixmap(QPixmap(self.wallpaper).scaled(self.width(), self.height()))
+        self.background.resize(self.width(), self.height())
+
     def set_background(self):
         self.background = QLabel(self)
         self.background.resize(self.width(), self.height())
-        self.background.setPixmap(QPixmap(BACKGROUND).scaled(self.width(), self.height()))
+        self.background.setPixmap(QPixmap(self.wallpaper).scaled(self.width(), self.height()))
 
     def start_game(self):
+        self.new_game()
+        self.wallpaper = GAME_BACKGROUND
+        self.resize_background()
         self.statusBar().hide()
         self.hide_buttons()
         self.chessgame.show()
@@ -62,24 +123,13 @@ class Application(QMainWindow):
         self.exit.show()
 
     def resize_buttons(self):
-        self.singleplayer.move(self.width() / 2 - 100, self.height() / 2 - 50)
-        self.multiplayer.move(self.width() / 2 - 100, self.height() / 2)
-        self.settings.move(self.width() / 2 - 100, self.height() / 2 + BH)
-        self.exit.move(self.width() / 2 - 100, self.height() / 2 + BH * 2)
-
-    def resizeEvent(self, event):
-        self.resize_buttons()
-        self.chessgame.move(self.width() / 2 - self.chessgame.width() / 2,
-                            self.height() / 2 - self.chessgame.height() / 2)
-        self.background.setPixmap(QPixmap(BACKGROUND).scaled(self.width(), self.height()))
-        self.background.resize(self.width(), self.height())
+        self.singleplayer.move(self.width() / 2 - BW/2, self.height() / 2 - BH)
+        self.multiplayer.move(self.width() / 2 - BW/2, self.height() / 2)
+        self.settings.move(self.width() / 2 - BW/2, self.height() / 2 + BH)
+        self.exit.move(self.width() / 2 - BW/2, self.height() / 2 + BH * 2)
 
     def create_buttons(self):
-        self.singleplayer = new_button('Play vs Computer', (self.width() / 2 - 100, self.height() / 2 - BH, BW, BH),
-                                       lambda: None, self)
-        self.multiplayer = new_button('Play vs Player', (self.width() / 2 - 100, self.height() / 2, BW, BH),
-                                      lambda: self.start_game(), self)
-        self.settings = new_button('Settings', (self.width() / 2 - 100, self.height() / 2 + BH, BW, BH),
-                                   lambda: None, self)
-        self.exit = new_button('Exit', (self.width() / 2 - 100, self.height() / 2 + BH * 2, BW, BH),
-                               lambda: None, self)
+        self.singleplayer = app_btn('Play vs Computer', (self.width() / 2 - BW / 2, self.height() / 2 - BH, BW, BH), lambda: None, self)
+        self.multiplayer = app_btn('Play vs Player', (self.width() / 2 - BW / 2, self.height() / 2, BW, BH), lambda: self.start_game(), self)
+        self.settings = app_btn('Settings', (self.width() / 2 - BW / 2, self.height() / 2 + BH, BW, BH), lambda: None, self)
+        self.exit = app_btn('Exit', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 2, BW, BH), lambda: self.close(), self)

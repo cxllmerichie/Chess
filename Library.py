@@ -4,8 +4,8 @@ from PyQt5.QtCore import Qt, QSize
 from datetime import datetime, timedelta
 from string import ascii_lowercase
 from Constants import S, FS, IMAGE_PATH
-import operator
 from os import path, getcwd
+import operator
 
 
 def operate(left: int, _operator: str, right: int):
@@ -84,6 +84,15 @@ def new_button(title: str, geometry: tuple, click, window: QWidget) -> QPushButt
     button.setGeometry(geometry[0], geometry[1], geometry[2], geometry[3])
     button.setFont(QFont('Arial', FS / 2))
     button.setStyleSheet('background: #323232')
+    button.clicked.connect(click)
+    return button
+
+
+def app_btn(title: str, geometry: tuple, click, window: QWidget) -> QPushButton:
+    button = QPushButton(title, parent=window)
+    button.setGeometry(geometry[0], geometry[1], geometry[2], geometry[3])
+    button.setStyleSheet('QPushButton {background-color: #323232; color: white; font-weight: bold;}')
+    button.setFont(QFont('Calibri', int(FS/1.25)))
     button.clicked.connect(click)
     return button
 

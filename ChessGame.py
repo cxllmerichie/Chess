@@ -24,11 +24,15 @@ class ChessGame(QWidget):
         self.chessgui.installEventFilter(self.chessgui)
         self.hide()
 
+    def closeEvent(self, event):
+        self.end_game()
+        event.accept()
+
     def start_game(self):
         Thread(target=lambda: self.timer_control()).start()
 
     def timer_control(self):
-        while self.chessgui.enable_mouse_click:
+        while self.chessgui.enable_mouse_click and str_time_to_float(self.timers['b'].time) > 0 and str_time_to_float(self.timers['w'].time) > 0:
             if self.chessgui.chess.chessboard[self.chessgui.chess.last_move[1][0]][self.chessgui.chess.last_move[1][1]][0] == 'b':
                 self.timers['b'].pause()
                 self.timers['w'].resume()
@@ -36,8 +40,7 @@ class ChessGame(QWidget):
                 self.timers['w'].pause()
                 self.timers['b'].resume()
             sleep(TICK_PERIOD / 2)
-            if str_time_to_float(self.timers['b'].time) <= 0 or str_time_to_float(self.timers['w'].time) <= 0:
-                self.chessgui.enable_mouse_click = False
+        self.end_game()
 
     def text_labels(self):
         for i in range(1, 9, 1):
