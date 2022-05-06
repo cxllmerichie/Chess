@@ -208,7 +208,7 @@ class Promotion(QWidget):
 
         self.case: list = [(0, 'Q'), (S, 'R'), (S * 2, 'N'), (S * 3, 'B')] if self.color == 'w' else [(0, 'B'), (S, 'N'), (S * 2, 'R'), (S * 3, 'Q')]
         for _tuple in self.case:
-            image_label(0, _tuple[0], S, S, 'grs', self).show()
+            image_label(0, _tuple[0], S, S, 'promotion', self).show()
             image_label(0, _tuple[0], S, S, self.color + _tuple[1], self).show()
 
         self.move(self.y * S, 0) if self.color == 'w' else self.move(self.y * S, S * 4)
@@ -235,12 +235,12 @@ class Promotion(QWidget):
 class Label:
     def __init__(self, window: QWidget, chess: ChessLogic):
         self.background: list = self.create_background(window, chess)
-        self.position: list = self.create_indicators('gd', window, chess)
-        self.check: list = self.create_indicators('rc', window, chess)
-        self.choice: list = self.create_indicators('ys', window, chess)
-        self.checkmate: list = self.create_indicators('rs', window, chess)
-        self.stalemate: list = self.create_indicators('os', window, chess)
-        self.capture: list = self.create_indicators('gc', window, chess)
+        self.position: list = self.create_indicators('position', window, chess)
+        self.check: list = self.create_indicators('check', window, chess)
+        self.choice: list = self.create_indicators('choice', window, chess)
+        self.checkmate: list = self.create_indicators('checkmate', window, chess)
+        self.stalemate: list = self.create_indicators('stalemate', window, chess)
+        self.capture: list = self.create_indicators('capture', window, chess)
         self.pieces: list = self.create_pieces(window, chess)
 
     # labels
@@ -251,7 +251,7 @@ class Label:
             _background.append([])
             for x in range(len(chess.chessboard)):
                 _background[y].append(
-                    image_label(x * S, y * S, S, S, 'gs' if (y + x) % 2 else 'ws', window))
+                    image_label(x * S, y * S, S, S, 'dark' if (y + x) % 2 else 'light', window))
                 _background[y][x].show()
         return _background
 

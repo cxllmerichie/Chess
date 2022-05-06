@@ -8,7 +8,7 @@ class TimePrecision(Enum):
     MinSecMilli = 8
 
 
-COEFFICIENT: Final = 15
+COEFFICIENT: Final = 14
 SW, SH = size().width / 2, size().height  # screen width & screen height
 S: Final = int(SH / COEFFICIENT // 10 * 10) if SH < SW else int(SW / COEFFICIENT // 10 * 10)  # square size (labels)
 FS: Final = int(S / 4)  # general font size

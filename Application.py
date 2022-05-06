@@ -1,9 +1,8 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QMessageBox, QMainWindow, QShortcut
 from PyQt5.QtGui import QPixmap, QFont, QKeySequence
 from Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, S
-from Library import app_btn
+from Library import app_btn, time, date, line, duration
 from ChessGame import ChessGame
-from Library import time, date, line, duration
 from timeit import default_timer
 
 start, end = 0, 0
@@ -58,15 +57,22 @@ class Application(QMainWindow):
         self.back_to_menu = QShortcut(QKeySequence('Ctrl+M'), self)
         self.back_to_menu.activated.connect(lambda: self.go_back_to_menu())
 
-    def go_back_to_menu(self):
-        if self.wallpaper != MENU_BACKGROUND:
-            reply = QMessageBox.question(self, 'Menu', 'Return to menu?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if reply == QMessageBox.Yes:
-                self.end_log()
-                self.chessgame.close()
-                self.wallpaper = MENU_BACKGROUND
-                self.resize_background()
-                self.show_buttons()
+    def go_back_to_menu_procedure(self):
+        self.end_log()
+        self.chessgame.close()
+        self.wallpaper = MENU_BACKGROUND
+        self.resize_background()
+        self.statusBar().show()
+        self.show_buttons()
+
+    def go_back_to_menu(self, with_reply: bool = True):
+        if with_reply:
+            if self.wallpaper != MENU_BACKGROUND:
+                reply = QMessageBox.question(self, 'Menu', 'Return to menu?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    self.go_back_to_menu_procedure()
+        else:
+            self.go_back_to_menu_procedure()
 
     def go_full_screen_mode(self):
         self.showNormal() if self.isFullScreen() else self.showFullScreen()
@@ -76,6 +82,7 @@ class Application(QMainWindow):
         if reply == QMessageBox.Yes:
             if self.chessgame is not None:
                 self.chessgame.end_game()
+                self.go_back_to_menu(False)
                 self.log.close()
             event.accept()
         else:
