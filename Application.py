@@ -1,12 +1,15 @@
+from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut
 from PyQt5.QtGui import QPixmap, QFont, QKeySequence
 from Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, S
-from Library import app_btn  # , time, date, line, duration
+from Library import app_btn, awaiting_label, State  # , time, date, line, duration
 from ChessGame import ChessGame
 # from timeit import default_timer
-from Network import Network
+from Server import Network
 from _thread import start_new_thread
-from pygame.time import Clock
+from contextlib import redirect_stdout
+with redirect_stdout(None):
+    from pygame.time import Clock
 
 start, end = 0, 0
 
@@ -23,9 +26,8 @@ class Application(QMainWindow):
         self.setWindowTitle('Chess (Pre-Alpha)')
 
         self.chessgame = ChessGame(self)
-        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2),
-                            int(self.height() / 2 - self.chessgame.height() / 2))
-        self.state: bool = True
+        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
+        self.multiplayer_state: State = State.Waiting
 
         self.set_background()
         self.create_buttons()
@@ -34,6 +36,8 @@ class Application(QMainWindow):
 
         self.setMinimumSize(S*10, S*10)
         self.move(SW / 2 - self.width() / 2, SH / 2 - self.height() / 2)
+        self.awaiting: QLabel = awaiting_label(QSize(self.width(), self.height()), self)
+
         self.showNormal()
 
     """def start_log(self):
@@ -48,12 +52,6 @@ class Application(QMainWindow):
         self.log.write(f'End: {date()} {time()}\n')
         self.log.write(f'Duration: {duration(start, end)}\n')
         self.log.write(line(50))"""
-
-    def new_game(self):
-        # self.start_log()
-        # self.chessgame = ChessGame(self, self.log)
-        self.chessgame = ChessGame(self)
-        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
 
     def set_shortcuts(self):
         self.full_screen_mode = QShortcut(QKeySequence('F11'), self)
@@ -72,7 +70,6 @@ class Application(QMainWindow):
         self.resize_background()
         self.statusBar().show()
         self.show_buttons()
-        self.state = False
 
     def go_back_to_menu(self, with_reply: bool = True):
         if with_reply:
@@ -99,9 +96,17 @@ class Application(QMainWindow):
 
     def resizeEvent(self, event):
         self.resize_buttons()
+        self.resize_awaiting()
         if self.chessgame is not None:
             self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
         self.resize_background()
+
+    def resize_awaiting(self):
+        was_visible: bool = self.awaiting.isVisible()
+        self.awaiting.hide()
+        self.awaiting = awaiting_label(QSize(self.width(), self.height()), self)
+        if was_visible:
+            self.awaiting.show()
 
     def set_status_bar(self):
         self.statusBar().setFont(QFont('Arial', int(FS / 2)))
@@ -116,16 +121,6 @@ class Application(QMainWindow):
         self.background = QLabel(self)
         self.background.resize(self.width(), self.height())
         self.background.setPixmap(QPixmap(self.wallpaper).scaled(self.width(), self.height()))
-
-    def start_game(self):
-        start_new_thread(self.connect_to_server, ())
-        self.new_game()
-        self.wallpaper = GAME_BACKGROUND
-        self.resize_background()
-        self.statusBar().hide()
-        self.hide_buttons()
-        self.chessgame.show()
-        self.chessgame.start_game()
 
     def hide_buttons(self):
         self.singleplayer.hide()
@@ -147,14 +142,37 @@ class Application(QMainWindow):
 
     def create_buttons(self):
         self.singleplayer = app_btn('Play vs Computer', (self.width() / 2 - BW / 2, self.height() / 2 - BH, BW, BH), lambda: None, self)
-        self.multiplayer = app_btn('Play vs Player', (self.width() / 2 - BW / 2, self.height() / 2, BW, BH), lambda: self.start_game(), self)
+        self.multiplayer = app_btn('Play vs Player', (self.width() / 2 - BW / 2, self.height() / 2, BW, BH), lambda: self.multiplayer_game(), self)
         self.settings = app_btn('Settings', (self.width() / 2 - BW / 2, self.height() / 2 + BH, BW, BH), lambda: None, self)
         self.exit = app_btn('Exit', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 2, BW, BH), lambda: self.close(), self)
+
+    def multiplayer_game(self):
+        self.wallpaper = GAME_BACKGROUND
+        self.resize_background()
+        self.statusBar().hide()
+        self.hide_buttons()
+        self.awaiting.show()
+        start_new_thread(self.connect_to_server, ())
+
+    def start_game(self):
+        self.awaiting.hide()
+        self.new_game()
+        self.chessgame.show()
+        self.chessgame.start_game()
+
+    def new_game(self):
+        # self.start_log()
+        # self.chessgame = ChessGame(self, self.log)
+        self.multiplayer_state = State.Started
+        self.chessgame = ChessGame(self)
+        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
 
     def connect_to_server(self):
         fps: Clock = Clock()
         network: Network = Network()
-        p1_data_from_server: str = network.get_data()
         while True:
             fps.tick(60)
-            p1_data_from_server: str = network.send('Manually input player #2 data.')
+            network.get_data()
+            if network.noc() == 2 and self.multiplayer_state is not State.Started:
+                start_new_thread(self.start_game, ())
+            network.send(f'[DATA]')

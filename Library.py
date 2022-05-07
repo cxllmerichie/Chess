@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from string import ascii_lowercase
 from Constants import S, FS, IMAGE_PATH
 from os import path, getcwd
+from enum import Enum
 import operator
 
 
@@ -72,6 +73,18 @@ def text_label(symbol: str, alignment, position: tuple, size: QSize, window: QWi
     return label
 
 
+def awaiting_label(size: QSize, window: QWidget) -> QLabel:
+    label: QLabel = QLabel(parent=window)
+    label.setText('Waiting for another player')
+    label.setFixedSize(size)
+    label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+    label.setFont(QFont('Arial', FS*2))
+    label.setStyleSheet('color: red')
+    label.move(0, 0)
+    label.hide()
+    return label
+
+
 def new_palette(img: str, width: int = S * 10, height: int = S * 10) -> QPalette:
     img = QImage(IMAGE_PATH + img).scaled(QSize(width, height))
     palette = QPalette()
@@ -116,3 +129,9 @@ def true_list(_list: list) -> bool:
 def str_time_to_float(_time: str) -> float:
     milliseconds: str = _time[6:]
     return float(_time[:2]) * 60 + float(_time[3:5]) + (float(milliseconds)/1000 if len(milliseconds) != 0 else 0)
+
+
+class State(Enum):
+    Waiting = 0
+    Started = 1
+    Finished = 2

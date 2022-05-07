@@ -17,8 +17,8 @@ class ChessGUI(QWidget):
         self.sound: str = ''
         self.enable_mouse_click: bool = True
 
-        self.chess = ChessLogic()
-        self.label = Label(self, self.chess)
+        self.chess: ChessLogic = ChessLogic()
+        self.label: Label = Label(self, self.chess)
         #self.log_file = log_file
         self.turn: int = 0
 
