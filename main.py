@@ -9,14 +9,9 @@
 from PyQt5.QtWidgets import QApplication
 from Application import Application
 from sys import argv
-from _thread import start_new_thread
-from Server import server_startup
 
 
 if __name__ == '__main__':
-    start_new_thread(server_startup, ())
-
     main_application: QApplication = QApplication(argv)
-    Application()
     Application()
     main_application.exec()

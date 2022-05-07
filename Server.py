@@ -1,100 +1,66 @@
 from socket import AF_INET, SOCK_STREAM, socket, error
-from _thread import start_new_thread
+# from _thread import start_new_thread
 # from pickle import dumps, loads
+# from threading import Thread, activeCount
+"""
 
-connections: int = 0
+
+class Server:
+    def __init__(self):
+        self.CONNECTION_LIMIT: int = 2
+
+        self.server: socket = socket(AF_INET, SOCK_STREAM)
+        self.server.bind((IP, PORT))
+
+    def client_handler(self, client: socket):
+        while True:
+            received = client.recv(BYTES).decode(ENCODING)
+            if not received:
+                print(f'[SERVER | CLIENT HANDLER] Data was not received.')
+                break
+            client.send()
+        print('[SERVER | CLIENT HANDLER] Closing client connection.')
+        client.close()
+        print(f'[SERVER | CLIENT HANDLER] Connection closed.')
+
+    def listen(self):
+        self.server.listen(self.CONNECTION_LIMIT)
+        print(f'[SERVER | LISTEN] Server is listening on {IP}.')
+        client, address = self.server.accept()
+        print(f'[SERVER | LISTEN] Connection from {address} has been established.')
+        Thread(target=self.client_handler, args=(client,)).start()
+        print(f'[SERVER | LISTEN] Active connections (threads): {activeCount()-1}.')
+
+
+class Client:
+    def __init__(self):
+        self.client: socket = socket(AF_INET, SOCK_STREAM)
+        self.client.connect((IP, PORT))
+
+    def send(self, data: str):
+        sending = bytes(data, ENCODING)
+        self.client.send(sending)
+"""
+IP: str = '10.107.0.5'
+PORT: int = 5555
+ENCODING: str = 'utf-8'
+BYTES: int = 1024
 
 
 class Network:
-    def __init__(self, ip: str = '10.107.0.5', port: int = 5555, _bytes: int = 1024):
-        self.IP: str = ip
-        self.PORT: int = port
-        self.BYTES: int = _bytes
-
+    def __init__(self):
         self.socket = socket(AF_INET, SOCK_STREAM)
-        self.address = (self.IP, self.PORT)
-        self.data = self.connect()
+        self.socket.connect((IP, PORT))
+        self.data = self.socket.recv(BYTES).decode()
 
-    @staticmethod
-    def noc():
-        return connections
-
-    def get_data(self):
+    def receive(self):
         return self.data
-
-    def connect(self):
-        try:
-            self.socket.connect(self.address)
-            return self.socket.recv(self.BYTES).decode()
-            # return loads(self.socket.recv(self.BYTES))
-        except:
-            print('[NETWORK | CONNECT] Connection failed.')
-            pass
 
     def send(self, data):
         try:
             self.socket.send(str.encode(data))
-            return self.socket.recv(self.BYTES).decode()
+            return self.socket.recv(BYTES).decode()
             # self.socket.send(dumps(data))
             # return loads(self.socket.recv(self.BYTES))
-        except BrokenPipeError:
-            print('[NETWORK | SEND] Server is down. (orig: [Errno 32] Broken pipe)')
         except error as socket_error:
             print(f'[NETWORK | SEND] Error raised. (orig: {socket_error})')
-
-
-class Server:
-    def __init__(self, ip: str = '10.107.0.5', port: int = 5555, _bytes: int = 1024):
-        self.IP: str = ip
-        self.PORT: int = port
-        self.BYTES: int = _bytes
-        self.CONNECTIONS_LIMIT: int = 2
-
-        self.socket = self.generate_socket()
-        self.data: str = '[DATA]'
-
-    def generate_socket(self) -> socket:
-        _socket: socket = socket(AF_INET, SOCK_STREAM)
-        try:
-            _socket.bind((self.IP, self.PORT))
-        except error as socket_error:
-            print(f'[SERVER | SOCKET] socket.bind((IP, PORT)) raised: {socket_error}')
-        _socket.listen(2)
-        print('[SERVER | SOCKET] Socket generated. Listening might be stated.')
-        return _socket
-
-    def client(self, connection, player) -> None:
-        connection.send(str.encode(self.data))
-        # connection.send(dumps(self.alldata[player]))
-        while True:
-            try:
-                data = connection.recv(self.BYTES).decode()
-                # data = loads(connection.recv(self.BYTES))
-                self.data = data
-                if not data:
-                    print('[SERVER | CLIENT] No data. Disconnecting.')
-                    break
-                else:
-                    print(f'Received (#{player}): {data}')
-                    print(f'Sending (#{player}): {data}')
-                    connection.sendall(str.encode(data))
-                    # connection.sendall(dumps(reply))
-            except:
-                print('[SERVER | CLIENT] Mainloop raised error.')
-                break
-        print('[SERVER | CLIENT] Connection terminated.')
-        connection.close()
-
-    def listener(self) -> None:
-        global connections
-        print(f'[SERVER | LISTENER] Listening stated. Awaiting for connections...')
-        while True:
-            connection, address = self.socket.accept()
-            print(f'[SERVER | LISTENER] Connected to {address}')
-            connections += 1
-            start_new_thread(self.client, (connection, connections))
-
-
-def server_startup(ip: str = '10.107.0.5', port: int = 5555, _bytes: int = 1024) -> None:
-    server: Server = Server(ip, port, _bytes)
-    server.listener()

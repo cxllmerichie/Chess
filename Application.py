@@ -10,8 +10,7 @@ from _thread import start_new_thread
 from contextlib import redirect_stdout
 with redirect_stdout(None):
     from pygame.time import Clock
-
-start, end = 0, 0
+from time import sleep
 
 
 class Application(QMainWindow):
@@ -147,23 +146,30 @@ class Application(QMainWindow):
         self.exit = app_btn('Exit', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 2, BW, BH), lambda: self.close(), self)
 
     def multiplayer_game(self):
+        self.show_awaiting_screen()
+        start_new_thread(self.connect_to_server, ())
+        start_new_thread(self.start_game, ())
+
+    def show_awaiting_screen(self):
         self.wallpaper = GAME_BACKGROUND
         self.resize_background()
         self.statusBar().hide()
         self.hide_buttons()
-        self.awaiting.show()
-        start_new_thread(self.connect_to_server, ())
-
-    def start_game(self):
-        self.awaiting.hide()
         self.new_game()
         self.chessgame.show()
+        self.awaiting = awaiting_label(QSize(self.width(), self.height()), self)
+        self.awaiting.show()
+
+    def start_game(self):
+        while True:
+            if self.multiplayer_state is State.Started:
+                break
+        self.awaiting.hide()
         self.chessgame.start_game()
 
     def new_game(self):
         # self.start_log()
         # self.chessgame = ChessGame(self, self.log)
-        self.multiplayer_state = State.Started
         self.chessgame = ChessGame(self)
         self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
 
@@ -171,8 +177,11 @@ class Application(QMainWindow):
         fps: Clock = Clock()
         network: Network = Network()
         while True:
-            fps.tick(60)
-            network.get_data()
-            if network.noc() == 2 and self.multiplayer_state is not State.Started:
-                start_new_thread(self.start_game, ())
-            network.send(f'[DATA]')
+            fps.tick(1)
+            me: str = network.receive()
+
+            opponent: str = network.send(network.receive())
+            print(me)
+            #print(sent)
+            if opponent[0] == 'R' and self.multiplayer_state is not State.Started:
+                self.multiplayer_state = State.Started
