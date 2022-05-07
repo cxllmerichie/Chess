@@ -46,6 +46,23 @@ class ChessGUI(QWidget):
                         self.chess.last_move = [(x1, y1), (x2, y2)]
                         self.play_sound(self.sound)
 
+    def manual_interaction(self, _x1, _y1, _x2, _y2) -> None:
+        if self.chess.last_move == [(_x1, _y1), (_x2, _y2)]:
+            return None
+        global x1, x2, y1, y2, move_buffer
+        move_buffer.append([_x1, _y1])
+        move_buffer.append([_x2, _y2])
+        x1, y1 = move_buffer[0][0], move_buffer[0][1]
+        self.fill_buffers()
+        self.label.show_indicators()
+        x2, y2 = move_buffer[1][0], move_buffer[1][1]
+        is_moved: bool = self.move_action()
+        self.label.hide_indicators()
+        self.end_game_procedures()
+        if is_moved:
+            self.chess.last_move = [(x1, y1), (x2, y2)]
+            self.play_sound(self.sound)
+
     # @DECORATOR
     def eventFilter(self, obj, event) -> bool:
         if not self.enable_mouse_click:
