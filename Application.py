@@ -5,12 +5,11 @@ from Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, S
 from Library import app_btn, awaiting_label, State  # , time, date, line, duration
 from ChessGame import ChessGame
 # from timeit import default_timer
-from Server import Client
+from Client import Client
 from _thread import start_new_thread
 from contextlib import redirect_stdout
 with redirect_stdout(None):
     from pygame.time import Clock
-from time import sleep
 
 
 class Application(QMainWindow):
@@ -178,13 +177,10 @@ class Application(QMainWindow):
         network: Client = Client()
         while True:
             fps.tick(200)
-            me: list = (network.receive()).split(',')
+            network.receive()
             l: list = self.chessgame.chessgui.chess.last_move
-            # print(l)
             s: str = f'{l[0][0]},{l[0][1]},{l[1][0]},{l[1][1]}, '
             op: list = (network.send(s)).split(',')
             self.chessgame.chessgui.manual_interaction(int(op[0]), int(op[1]), int(op[2]), int(op[3]))
-            # print(f'ME {me}')
-            # print(f'OP {op}')
             if op[4] == 'R' and self.multiplayer_state is not State.Started:
                 self.multiplayer_state = State.Started

@@ -1,5 +1,4 @@
 from socket import AF_INET, SOCK_STREAM, socket, error
-# from pickle import dumps, loads
 
 IP: str = '10.107.0.5'
 PORT: int = 5555
@@ -20,7 +19,5 @@ class Client:
         try:
             self.client.send(str.encode(data))
             return self.client.recv(BYTES).decode()
-            # self.socket.send(dumps(data))
-            # return loads(self.socket.recv(self.BYTES))
         except error as socket_error:
             print(f'[CLIENT | SEND] Error. (orig: {socket_error})')
