@@ -1,31 +1,36 @@
-import socket
-import pickle
+from socket import AF_INET, SOCK_STREAM, socket, error
+# from pickle import dumps, loads
 
 
 class Network:
-    def __init__(self, ip: str = '10.107.0.5', port: int = 5555, _bytes: int = 2048):
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    def __init__(self, ip: str = '10.107.0.5', port: int = 5555, _bytes: int = 1024):
         self.IP: str = ip
         self.PORT: int = port
         self.BYTES: int = _bytes
-        self.address = (self.IP, self.PORT)
-        self.game_state = self.connect()
 
-    def get_game_state(self):
-        return self.game_state
+        self.socket = socket(AF_INET, SOCK_STREAM)
+        self.address = (self.IP, self.PORT)
+        self.data = self.connect()
+
+    def get_data(self):
+        return self.data
 
     def connect(self):
         try:
-            self.client.connect(self.address)
-            return pickle.loads(self.client.recv(self.BYTES))
+            self.socket.connect(self.address)
+            return self.socket.recv(self.BYTES).decode()
+            # return loads(self.socket.recv(self.BYTES))
         except:
+            print('[NETWORK | CONNECT] Connection failed.')
             pass
 
     def send(self, data):
         try:
-            self.client.send(pickle.dumps(data))
-            return pickle.loads(self.client.recv(self.BYTES))
+            self.socket.send(str.encode(data))
+            return self.socket.recv(self.BYTES).decode()
+            # self.socket.send(dumps(data))
+            # return loads(self.socket.recv(self.BYTES))
         except BrokenPipeError:
-            print('Server is down. (orig: [Errno 32] Broken pipe)')
-        except socket.error as socket_error:
-            print(str(socket_error))
+            print('[NETWORK | SEND] Server is down. (orig: [Errno 32] Broken pipe)')
+        except error as socket_error:
+            print(f'[NETWORK | SEND] Error raised. (orig: {socket_error})')

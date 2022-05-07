@@ -1,9 +1,12 @@
 from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut
 from PyQt5.QtGui import QPixmap, QFont, QKeySequence
 from Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, S
-from Library import app_btn, time, date, line, duration
+from Library import app_btn  # , time, date, line, duration
 from ChessGame import ChessGame
-from timeit import default_timer
+# from timeit import default_timer
+from Network import Network
+from _thread import start_new_thread
+from pygame.time import Clock
 
 start, end = 0, 0
 
@@ -13,8 +16,7 @@ class Application(QMainWindow):
     background: QLabel
     singleplayer, multiplayer, settings, exit = None, None, None, None  # QPushButton
     full_screen_mode, close_application, back_to_menu = None, None, None  # QShortcut
-
-    #log = open('log.txt', "a")
+    # log = open('log.txt', "a")
 
     def __init__(self):
         super().__init__()
@@ -48,8 +50,8 @@ class Application(QMainWindow):
         self.log.write(line(50))"""
 
     def new_game(self):
-        #self.start_log()
-        #self.chessgame = ChessGame(self, self.log)
+        # self.start_log()
+        # self.chessgame = ChessGame(self, self.log)
         self.chessgame = ChessGame(self)
         self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
 
@@ -64,7 +66,7 @@ class Application(QMainWindow):
         self.back_to_menu.activated.connect(lambda: self.go_back_to_menu())
 
     def go_back_to_menu_procedure(self):
-        #self.end_log()
+        # self.end_log()
         self.chessgame.close()
         self.wallpaper = MENU_BACKGROUND
         self.resize_background()
@@ -90,7 +92,7 @@ class Application(QMainWindow):
             if self.chessgame is not None:
                 self.chessgame.end_game()
                 self.go_back_to_menu(False)
-                #self.log.close()
+                # self.log.close()
             event.accept()
         else:
             event.ignore()
@@ -116,6 +118,7 @@ class Application(QMainWindow):
         self.background.setPixmap(QPixmap(self.wallpaper).scaled(self.width(), self.height()))
 
     def start_game(self):
+        start_new_thread(self.connect_to_server, ())
         self.new_game()
         self.wallpaper = GAME_BACKGROUND
         self.resize_background()
@@ -148,5 +151,10 @@ class Application(QMainWindow):
         self.settings = app_btn('Settings', (self.width() / 2 - BW / 2, self.height() / 2 + BH, BW, BH), lambda: None, self)
         self.exit = app_btn('Exit', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 2, BW, BH), lambda: self.close(), self)
 
-    def update_game_state(self, _chessgame: ChessGame):
-        self.chessgame = _chessgame
+    def connect_to_server(self):
+        fps: Clock = Clock()
+        network: Network = Network()
+        p1_data_from_server: str = network.get_data()
+        while True:
+            fps.tick(60)
+            p1_data_from_server: str = network.send('Manually input player #2 data.')

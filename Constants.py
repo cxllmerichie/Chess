@@ -24,4 +24,4 @@ BW: Final = int(300)  # button width
 
 IP: str = "10.107.0.5"
 PORT: int = 5555
-BYTES: int = 2048
+BYTES: int = 1024
