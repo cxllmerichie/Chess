@@ -22,8 +22,3 @@ MENU_BACKGROUND: Final = IMAGE_PATH + 'wallpaper.jpg'
 GAME_BACKGROUND: Final = IMAGE_PATH + 'background.png'
 BH: Final = int(50)  # button height
 BW: Final = int(300)  # button width
-
-IP: str = '10.107.0.5'
-PORT: int = 5555
-ENCODING: str = 'utf-8'
-BYTES: int = 1024

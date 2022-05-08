@@ -1,5 +1,5 @@
 from socket import AF_INET, SOCK_STREAM, socket, error
-from Client.Constants import IP, PORT, ENCODING, BYTES
+from Server.config import IP, PORT, ENCODING, BYTES
 
 
 class Client:

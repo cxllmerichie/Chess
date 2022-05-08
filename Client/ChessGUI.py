@@ -76,11 +76,13 @@ class ChessGUI(QWidget):
         global check_buffer, x1, x1
         for cell in self.chess.move_set(x1, y1):
             if exist(cell):
-                if self.chess.chessboard[cell[0]][cell[1]] == '--':
+                if self.chess.chessboard[cell[0]][cell[1]] == '--' and\
+                        not (abs(cell[0]-x1) == abs(cell[1]-y1) == 1 and self.chess.chessboard[x1][y1][1] == 'p'):
                     position_buffer.append(cell)
                 elif self.chess.chessboard[cell[0]][cell[1]][1] == 'K':
                     check_buffer = list(cell)
-                elif self.chess.chessboard[cell[0]][cell[1]] != '--':
+                elif self.chess.chessboard[cell[0]][cell[1]] != '--' or\
+                        (abs(cell[0]-x1) == abs(cell[1]-y1) == 1 and self.chess.chessboard[x1][y1][1] == 'p'):
                     capture_buffer.append(cell)
 
     # piece move

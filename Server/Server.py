@@ -25,7 +25,7 @@ class Server:
                 if not data:
                     print('[SERVER | CLIENT HANDLER] No data. Disconnecting.')
                     break
-                elif data == 'DISCONNECT':
+                elif data == 'DISCONN':
                     print('[SERVER | CLIENT HANDLER] Disconnecting.')
                     break
                 else:
@@ -51,7 +51,7 @@ class Server:
             client, address = self.server.accept()
             print(f'[SERVER | LISTENER] Connection with {address} has been established.')
             Thread(target=self.client, args=(client, self.connection, address)).start()
-            print(f'[SERVER | LISTENER] Active connections (threads): {activeCount()-1}(not always true).')
+            print(f'[SERVER | LISTENER] Active connections (threads): {activeCount()-1} (or {activeCount()-2}).')
             print(f'[SERVER | LISTENER] Active connections (self.connection): {self.connection+1}.')
             self.connection += 1
 

@@ -186,7 +186,7 @@ class Application(QMainWindow):
             op: list = (network.send(s)).split(',')
             self.chessgame.chessgui.manual_interaction(int(op[0]), int(op[1]), int(op[2]), int(op[3]))
             if self.multiplayer_state is State.Finished:
-                network.send('Disconnect')
+                network.send('DISCONN')
                 break
             if op[4] == 'R' and self.multiplayer_state is State.Waiting:
                 self.multiplayer_state = State.Started
