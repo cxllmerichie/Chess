@@ -5,6 +5,7 @@ from Client.ChessLogic import ChessLogic
 from Client.Library import exist, image_label, sound, operate
 from Client.Constants import S
 
+
 x1 = y1 = x2 = y2 = 0
 move_buffer, check_buffer, position_buffer, capture_buffer = [], [], [], []
 
@@ -20,7 +21,8 @@ class ChessGUI(QWidget):
         self.chess: ChessLogic = ChessLogic()
         self.label: Label = Label(self, self.chess)
         #self.log_file = log_file
-        self.turn: int = 0
+        self.turn: int = 1
+        self.color = '?'
 
         self.move(S, S)
         self.setFixedSize(QSize(S * 8, S * 8))
@@ -31,6 +33,10 @@ class ChessGUI(QWidget):
     # @DECORATOR
     def mousePressEvent(self, click) -> None:
         global x1, x2, y1, y2, move_buffer
+        if self.color == 'w' and self.turn % 2 != 1:
+            return None
+        elif self.color == 'b' and self.turn % 2 != 0:
+                return None
         if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // S][click.x() // S] == '--'):
             if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // S][click.x() // S][0] == self.chess.chessboard[self.chess.last_move[1][0]][self.chess.last_move[1][1]][0]):
                 move_buffer.append([click.y() // S, click.x() // S])
@@ -43,6 +49,7 @@ class ChessGUI(QWidget):
                     self.label.hide_indicators()
                     self.end_game_procedures()
                     if is_moved:
+                        self.turn += 1
                         self.chess.last_move = [(x1, y1), (x2, y2)]
                         self.play_sound(self.sound)
 
@@ -60,6 +67,7 @@ class ChessGUI(QWidget):
         self.label.hide_indicators()
         self.end_game_procedures()
         if is_moved:
+            self.turn += 1
             self.chess.last_move = [(x1, y1), (x2, y2)]
             self.play_sound(self.sound)
 

@@ -4,6 +4,7 @@ from PyQt5.QtGui import QPixmap, QFont, QKeySequence
 from Client.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, S
 from Client.Library import app_btn, awaiting_label, State  # , time, date, line, duration
 from Client.ChessGame import ChessGame
+from Server.config import DISCONNECT
 # from timeit import default_timer
 from Client.Client import Client
 from _thread import start_new_thread
@@ -178,15 +179,15 @@ class Application(QMainWindow):
     def connect_to_server(self):
         fps: Clock = Clock()
         network: Client = Client()
+        self.chessgame.chessgui.color = network.receive()[10]
         while True:
             fps.tick(200)
-            network.receive()
             l: list = self.chessgame.chessgui.chess.last_move
-            s: str = f'{l[0][0]},{l[0][1]},{l[1][0]},{l[1][1]}, '
+            s: str = f'{l[0][0]},{l[0][1]},{l[1][0]},{l[1][1]}, , '
             op: list = (network.send(s)).split(',')
             self.chessgame.chessgui.manual_interaction(int(op[0]), int(op[1]), int(op[2]), int(op[3]))
             if self.multiplayer_state is State.Finished:
-                network.send('DISCONN')
+                network.send(DISCONNECT)
                 break
             if op[4] == 'R' and self.multiplayer_state is State.Waiting:
                 self.multiplayer_state = State.Started

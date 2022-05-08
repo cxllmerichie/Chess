@@ -132,7 +132,7 @@ def str_time_to_float(_time: str) -> float:
 
 
 class State(Enum):
-    Waiting = 0
-    Started = 2
+    Waiting = 2
+    Started = 0
     Finished = 1
     Proceeding = 3

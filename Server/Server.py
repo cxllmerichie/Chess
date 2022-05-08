@@ -1,6 +1,6 @@
 from socket import AF_INET, SOCK_STREAM, socket, error
 from threading import Thread, activeCount
-from Server.config import IP, PORT, ENCODING, BYTES, DEFAULT, CONNECTION_LIMIT
+from Server.config import IP, PORT, ENCODING, DEFAULT, BYTES, CONNECTION_LIMIT, DISCONNECT
 
 
 class Server:
@@ -14,18 +14,18 @@ class Server:
         except error as socket_error:
             self.startup_allowed: bool = False
             print(f'[SERVER | CLIENT HANDLER] Error. (orig: {str(socket_error)})')
-        self.alldata: list = [DEFAULT, DEFAULT]
+        self.alldata: list = [DEFAULT+'w', DEFAULT+'b']
 
     def client(self, client: socket, connection: int, address) -> None:
         client.send(str.encode(self.alldata[connection]))
         while True:
             try:
                 data = client.recv(BYTES).decode(ENCODING)
-                self.alldata[connection] = data[:-1] + 'R'
+                self.alldata[connection] = data[:8] + 'R,' + self.alldata[connection][10]
                 if not data:
                     print('[SERVER | CLIENT HANDLER] No data. Disconnecting.')
                     break
-                elif data == 'DISCONN':
+                elif data == DISCONNECT:
                     print('[SERVER | CLIENT HANDLER] Disconnecting.')
                     break
                 else:
@@ -37,7 +37,7 @@ class Server:
                 print(f'[SERVER | CLIENT HANDLER] Mainloop error. (orig: {str(socket_error)})')
                 break
         print(f'[SERVER | CLIENT HANDLER] Closing connection for {address}.')
-        self.alldata[connection] = DEFAULT
+        self.alldata: list = [DEFAULT+'w', DEFAULT+'b']
         self.connection -= 1
         client.close()
         print(f'[SERVER | CLIENT HANDLER] Connection closed.')
