@@ -73,7 +73,7 @@ def text_label(symbol: str, alignment, position: tuple, size: QSize, window: QWi
     return label
 
 
-def awaiting_label(size: QSize, window: QWidget) -> QLabel:
+def app_label(size: QSize, window: QWidget) -> QLabel:
     label: QLabel = QLabel(parent=window)
     label.setText('Waiting for another player')
     label.setFixedSize(size)
@@ -92,12 +92,13 @@ def new_palette(img: str, width: int = S * 10, height: int = S * 10) -> QPalette
     return palette
 
 
-def new_button(title: str, geometry: tuple, click, window: QWidget) -> QPushButton:
+def game_btn(title: str, geometry: tuple, click, window: QWidget) -> QPushButton:
     button = QPushButton(title, parent=window)
     button.setGeometry(geometry[0], geometry[1], geometry[2], geometry[3])
     button.setFont(QFont('Arial', FS / 2))
     button.setStyleSheet('background: #323232')
     button.clicked.connect(click)
+    button.hide()
     return button
 
 
@@ -132,6 +133,8 @@ def str_time_to_float(_time: str) -> float:
 
 
 class State(Enum):
+    Resigned = 4
+    Draw = 5
     Waiting = 2
     Started = 0
     Finished = 1

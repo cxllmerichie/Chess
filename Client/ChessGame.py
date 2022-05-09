@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QWidget, QLabel, QMessageBox
+from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import QSize, Qt
-from Client.Library import new_button, str_time_to_float, text_label
+from Client.Library import str_time_to_float, text_label
 from Client.Constants import TICK_PERIOD, GAME_TIME, S, TIME_FORMAT
 from string import ascii_uppercase
 from Client.ChessGUI import ChessGUI
@@ -16,7 +16,6 @@ class ChessGame(QWidget):
         self.setFixedSize(QSize(S * 10, S * 10))
 
         self.text_labels()
-        self.buttons()
 
         self.timers: dict = {'w': Timer(text_label(GAME_TIME, Qt.AlignHCenter | Qt.AlignBottom, (S * 4, S * 9), QSize(S * 2, S), self)),
                              'b': Timer(text_label(GAME_TIME, Qt.AlignHCenter | Qt.AlignTop, (S * 4, 0), QSize(S * 2, S), self))}
@@ -50,27 +49,6 @@ class ChessGame(QWidget):
             text_label(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignTop, (S * i, S * 9), QSize(S, S), self)#.show()
             text_label(str(9 - i), Qt.AlignVCenter | Qt.AlignLeft, (S * 9 + 0.1 * S, S * i), QSize(0.9 * S, S), self)#.show()
             text_label(str(9 - i), Qt.AlignVCenter | Qt.AlignRight, (0, S * i), QSize(0.9 * S, S), self)#.show()
-
-    def buttons(self):
-        new_button('Draw by agreement', (S, S * 9 + S / 2, S * 2, S / 4),
-                   lambda: self.end_game_message(QMessageBox.Question, 'Draw by agreement', 'Do you agree for a draw?'), self)#.show()
-        new_button('Resign', (S, S * 9 + S / 2 + S / 4, S * 2, S / 4),
-                   lambda: self.end_game_message(QMessageBox.Warning, 'Resignation', 'Do you want to resign?'), self)#.show()
-        new_button('VolumeUp', (S * 9, S * 9 + S / 4, S, S / 4),
-                   lambda: self.chessgui.audio_player.setVolume(self.chessgui.audio_player.volume() + 10), self)#.show()
-        new_button('VolumeDown', (S * 9, S * 10 - S / 2, S, S / 4),
-                   lambda: self.chessgui.audio_player.setVolume(self.chessgui.audio_player.volume() - 10), self)#.show()
-        new_button('Mute', (S * 9, S * 10 - S / 4, S, S / 4),
-                   lambda: self.chessgui.audio_player.setVolume(0 if self.chessgui.audio_player.volume() != 0 else 100), self)#.show()
-
-    def end_game_message(self, icon_type, title: str, text: str) -> None:
-        msg = QMessageBox()
-        msg.setIcon(icon_type)
-        msg.setText(text)
-        msg.setWindowTitle(title)
-        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        if msg.exec_() == QMessageBox.Yes:
-            self.end_game()
 
     def end_game(self):
         self.chessgui.enable_mouse_click = False
