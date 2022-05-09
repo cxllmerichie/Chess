@@ -11,16 +11,14 @@ move_buffer, check_buffer, position_buffer, capture_buffer = [], [], [], []
 
 
 class ChessGUI(QWidget):
-    #def __init__(self, parent_window: QWidget, log_file):
-    def __init__(self, parent_window: QWidget):
-        super(ChessGUI, self).__init__(parent=parent_window)
+    def __init__(self, parent: QWidget):
+        super().__init__(parent=parent)
         self.audio_player = QMediaPlayer()
         self.sound: str = ''
         self.enable_mouse_click: bool = True
 
         self.chess: ChessLogic = ChessLogic()
         self.label: Label = Label(self, self.chess)
-        #self.log_file = log_file
         self.turn: int = 1
         self.color = '?'
 
@@ -33,10 +31,8 @@ class ChessGUI(QWidget):
     # @DECORATOR
     def mousePressEvent(self, click) -> None:
         global x1, x2, y1, y2, move_buffer
-        if self.color == 'w' and self.turn % 2 != 1:
+        if (self.color == 'w' and self.turn % 2 != 1) or (self.color == 'b' and self.turn % 2 != 0):
             return None
-        elif self.color == 'b' and self.turn % 2 != 0:
-                return None
         if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // S][click.x() // S] == '--'):
             if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // S][click.x() // S][0] == self.chess.chessboard[self.chess.last_move[1][0]][self.chess.last_move[1][1]][0]):
                 move_buffer.append([click.y() // S, click.x() // S])
@@ -103,7 +99,6 @@ class ChessGUI(QWidget):
                 if not captured and not promoted:
                     self.is_en_passant()
             self.move_piece()
-            #self.update_log()
             return True
         move_buffer.clear()
         return False
@@ -138,10 +133,8 @@ class ChessGUI(QWidget):
             elif x1 == 0 and y1 == 4 and x2 == 0 and y2 == 2:
                 rp, ep = [0, 0], [0, 3]
         if len(rp) == len(ep) == 2:
-            self.chess.chessboard[ep[0]][ep[1]], self.chess.chessboard[rp[0]][rp[1]] =\
-                self.chess.chessboard[rp[0]][rp[1]], self.chess.chessboard[ep[0]][ep[1]]
-            self.label.pieces[ep[0]][ep[1]], self.label.pieces[rp[0]][rp[1]] =\
-                self.label.pieces[rp[0]][rp[1]], self.label.pieces[ep[0]][ep[1]]
+            self.chess.chessboard[ep[0]][ep[1]], self.chess.chessboard[rp[0]][rp[1]] = self.chess.chessboard[rp[0]][rp[1]], self.chess.chessboard[ep[0]][ep[1]]
+            self.label.pieces[ep[0]][ep[1]], self.label.pieces[rp[0]][rp[1]] = self.label.pieces[rp[0]][rp[1]], self.label.pieces[ep[0]][ep[1]]
             self.label.pieces[ep[0]][ep[1]].move(ep[1] * S, ep[0] * S)
             self.sound = 'castling'
             return True
@@ -174,11 +167,6 @@ class ChessGUI(QWidget):
         self.audio_player.setMedia(QMediaContent(QUrl.fromLocalFile(sound(action))))
         self.audio_player.play()
 
-    """# game log
-    def update_log(self) -> None:
-        self.turn += 1
-        self.log_file.write(f"{self.turn}. {self.chess.chessboard[x2][y2]} {self.chess.square_names[x1][y1]}->{self.chess.square_names[x2][y2]}\n")
-"""
     # END-GAME procedures
     def end_game_procedures(self) -> bool:
         if self.checkmate() or self.stalemate():

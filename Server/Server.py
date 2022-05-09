@@ -1,6 +1,6 @@
 from socket import AF_INET, SOCK_STREAM, socket, error
 from threading import Thread, activeCount
-from Server.config import IP, PORT, ENCODING, DEFAULT, BYTES, CONNECTION_LIMIT, DISCONNECT
+from Server.config import IP, PORT, ENCODING, DEFAULT, BYTES, CONNECTION_LIMIT, DISCONNECT, RESIGN, SUGGESTDRAW, ACCEPTEDDRAW
 
 
 class Server:
@@ -25,10 +25,22 @@ class Server:
                     print('[SERVER | CLIENT HANDLER] No data. Disconnecting.')
                     break
                 elif data == DISCONNECT:
-                    print('[SERVER | CLIENT HANDLER] Disconnecting.')
-                    break
+                    self.alldata[connection] = DISCONNECT
+                    client.sendall(str.encode(DISCONNECT))
+                elif data == RESIGN:
+                    self.alldata[connection] = RESIGN
+                    client.sendall(str.encode(RESIGN))
+                elif data == SUGGESTDRAW:
+                    self.alldata[connection] = SUGGESTDRAW
+                    client.sendall(str.encode(SUGGESTDRAW))
+                elif data == ACCEPTEDDRAW:
+                    self.alldata[connection] = ACCEPTEDDRAW
+                    client.sendall(str.encode(ACCEPTEDDRAW))
                 else:
-                    self.alldata[connection] = data[:8] + 'R,' + self.alldata[connection][10]
+                    try:
+                        self.alldata[connection] = data[:8] + 'R,' + self.alldata[connection][10]
+                    except IndexError:
+                        pass  # opponent resigned or it is a draw
                     reply = self.alldata[0] if connection == 1 else self.alldata[1]
                     # print(f'Received (#{connection}): {data}')
                     # print(f'Sending (#{connection}): {reply}')

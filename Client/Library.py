@@ -73,9 +73,9 @@ def text_label(symbol: str, alignment, position: tuple, size: QSize, window: QWi
     return label
 
 
-def app_label(size: QSize, window: QWidget) -> QLabel:
+def app_label(text: str, size: QSize, window: QWidget) -> QLabel:
     label: QLabel = QLabel(parent=window)
-    label.setText('Waiting for another player')
+    label.setText(text)
     label.setFixedSize(size)
     label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
     label.setFont(QFont('Arial', FS*2))
@@ -134,8 +134,17 @@ def str_time_to_float(_time: str) -> float:
 
 class State(Enum):
     Resigned = 4
-    Draw = 5
+    SuggestedDraw = 6
+    AcceptedDraw = 5
     Waiting = 2
     Started = 0
     Finished = 1
     Proceeding = 3
+
+
+class Info(Enum):
+    Waiting = 'Waiting for another player'
+    Resign = 'Opponent Resigned!'
+    Draw = 'It is a Draw.'
+    Win = 'You Win!'
+    Defeat = 'You Lost...'

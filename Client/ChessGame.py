@@ -9,9 +9,8 @@ from time import sleep
 
 
 class ChessGame(QWidget):
-    # def __init__(self, parent_window: QWidget, log_file):
-    def __init__(self, parent_window: QWidget):
-        super(ChessGame, self).__init__(parent=parent_window)
+    def __init__(self, parent: QWidget):
+        super().__init__(parent=parent)
         self.setWindowFlag(Qt.FramelessWindowHint)
         self.setFixedSize(QSize(S * 10, S * 10))
 
@@ -20,7 +19,6 @@ class ChessGame(QWidget):
         self.timers: dict = {'w': Timer(text_label(GAME_TIME, Qt.AlignHCenter | Qt.AlignBottom, (S * 4, S * 9), QSize(S * 2, S), self)),
                              'b': Timer(text_label(GAME_TIME, Qt.AlignHCenter | Qt.AlignTop, (S * 4, 0), QSize(S * 2, S), self))}
 
-        # self.chessgui = ChessGUI(self, log_file)
         self.chessgui = ChessGUI(self)
         self.chessgui.installEventFilter(self.chessgui)
         self.hide()
@@ -45,10 +43,10 @@ class ChessGame(QWidget):
 
     def text_labels(self):
         for i in range(1, 9, 1):
-            text_label(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignBottom, (i * S, 0), QSize(S, S), self)#.show()
-            text_label(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignTop, (S * i, S * 9), QSize(S, S), self)#.show()
-            text_label(str(9 - i), Qt.AlignVCenter | Qt.AlignLeft, (S * 9 + 0.1 * S, S * i), QSize(0.9 * S, S), self)#.show()
-            text_label(str(9 - i), Qt.AlignVCenter | Qt.AlignRight, (0, S * i), QSize(0.9 * S, S), self)#.show()
+            text_label(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignBottom, (i * S, 0), QSize(S, S), self)
+            text_label(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignTop, (S * i, S * 9), QSize(S, S), self)
+            text_label(str(9 - i), Qt.AlignVCenter | Qt.AlignLeft, (S * 9 + 0.1 * S, S * i), QSize(0.9 * S, S), self)
+            text_label(str(9 - i), Qt.AlignVCenter | Qt.AlignRight, (0, S * i), QSize(0.9 * S, S), self)
 
     def end_game(self):
         self.chessgui.enable_mouse_click = False
