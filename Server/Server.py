@@ -21,7 +21,6 @@ class Server:
         while True:
             try:
                 data = client.recv(BYTES).decode(ENCODING)
-                self.alldata[connection] = data[:8] + 'R,' + self.alldata[connection][10]
                 if not data:
                     print('[SERVER | CLIENT HANDLER] No data. Disconnecting.')
                     break
@@ -29,6 +28,7 @@ class Server:
                     print('[SERVER | CLIENT HANDLER] Disconnecting.')
                     break
                 else:
+                    self.alldata[connection] = data[:8] + 'R,' + self.alldata[connection][10]
                     reply = self.alldata[0] if connection == 1 else self.alldata[1]
                     # print(f'Received (#{connection}): {data}')
                     # print(f'Sending (#{connection}): {reply}')

@@ -54,7 +54,7 @@ class Application(QMainWindow):
 
     def set_shortcuts(self):
         self.full_screen_mode = QShortcut(QKeySequence('F11'), self)
-        self.full_screen_mode.activated.connect(lambda: self.go_full_screen_mode())
+        self.full_screen_mode.activated.connect(lambda: (self.showNormal() if self.isFullScreen() else self.showFullScreen()))
 
         self.close_application = QShortcut(QKeySequence('Ctrl+E'), self)
         self.close_application.activated.connect(lambda: self.close())
@@ -80,9 +80,6 @@ class Application(QMainWindow):
                     self.go_back_to_menu_procedure()
         else:
             self.go_back_to_menu_procedure()
-
-    def go_full_screen_mode(self):
-        self.showNormal() if self.isFullScreen() else self.showFullScreen()
 
     def closeEvent(self, event):
         reply = QMessageBox.question(self, 'Exit', 'Close the application?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
