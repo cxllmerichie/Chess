@@ -17,8 +17,8 @@ class ChessGUI(QWidget):
         self.sound: str = ''
         self.enable_mouse_click: bool = True
 
-        self.chess: ChessLogic = ChessLogic()
         self.color = color
+        self.chess: ChessLogic = ChessLogic(self.color)
         self.label: Label = Label(self, self.chess, self.color)
         self.turn: int = 0
 
@@ -31,9 +31,7 @@ class ChessGUI(QWidget):
     # @DECORATOR
     def mousePressEvent(self, click) -> None:
         global x1, x2, y1, y2, move_buffer
-        print("IN")
-        if (self.color == 'w' and self.turn % 2 != 1) or (self.color == 'b' and self.turn % 2 != 0) or (self.color == 'b' and self.chess.last_move == [(0, 0), (0, 0)]):
-            print("RETURNED NONE")
+        if (self.color == 'w' and self.turn % 2 != 0) or (self.color == 'b' and self.turn % 2 != 1):
             return None
         if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // S][click.x() // S] == '--'):
             if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // S][click.x() // S][0] == self.chess.chessboard[self.chess.last_move[1][0]][self.chess.last_move[1][1]][0]):
@@ -52,18 +50,10 @@ class ChessGUI(QWidget):
                         self.play_sound(self.sound)
 
     def manual_interaction(self, _x1, _y1, _x2, _y2) -> None:
-        # if self.chess.last_move == [(abs(7-_x1), abs(7-_y1)), (abs(7-_x2), abs(7-_y2))]:
-        print(self.chess.last_move, [(_x1, _y1), (_x2, _y2)])
-        # if self.chess.last_move == [(abs(7-_x1), abs(7-_y1)), (abs(7-_x2), abs(7-_y2))]:
-        if self.chess.last_move == [(_x1, _y1), (_x2, _y2)] or [(_x1, _y1), (_x2, _y2)] == [(0, 0), (0, 0)]:
-            print("RETURN FROM SIMILAR PREV MOVE")
+        if self.chess.last_move == [(_x1, _y1), (_x2, _y2)] or [(_x1, _y1), (_x2, _y2)] == [(7, 7), (7, 7)]:
             return None
-        # self.turn += 1
         global x1, x2, y1, y2, move_buffer
-        print(f"GOT {_x1, _y1, _x2, _y2}")
-        # move_buffer.append([_x1, _y1])
         move_buffer.append([_x1, _y1])
-        # move_buffer.append([_x2, _y2])
         move_buffer.append([_x2, _y2])
         x1, y1 = move_buffer[0][0], move_buffer[0][1]
         self.fill_buffers()

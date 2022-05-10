@@ -2,7 +2,7 @@ from Client.Library import exists, exist, set_exists, operate, create_square_nam
 
 
 class ChessLogic:
-    def __init__(self):
+    def __init__(self, color: str = '?'):
         self.square_names: list = create_square_names()
         self.chessboard: list = [
             ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR'],
@@ -13,8 +13,11 @@ class ChessLogic:
             ['--', '--', '--', '--', '--', '--', '--', '--'],
             ['wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp'],
             ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']]
+        if color == 'b':
+            self.chessboard[0][3], self.chessboard[0][4] = self.chessboard[0][4], self.chessboard[0][3]
+            self.chessboard[7][3], self.chessboard[7][4] = self.chessboard[7][4], self.chessboard[7][3]
         self.castling = Castling()
-        self.last_move = [(7, 7), (7, 7)]
+        self.last_move = [(0, 0), (0, 0)]
 
     def position(self, piece: str) -> tuple:
         for row in range(len(self.chessboard)):

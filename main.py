@@ -4,7 +4,6 @@
 # FOR MULTIPLAYER
 # ToDo: loser&winner, starting messages etc.
 # ToDo: MULTI multiplayer
-# ToDo: show the chessboard correctly for black player too
 # ToDo: fix promotion
 # ToDo: fix buttons draw
 # ToDo: self-calculating bytes amount for client and server

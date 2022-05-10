@@ -15,16 +15,11 @@ class ChessGame(QWidget):
         self.setFixedSize(QSize(S * 10, S * 10))
         self.color: str = color
         self.text_labels()
-        self.timers: dict = {'w': Timer(text_label(GAME_TIME, self.alig_pos()[0], self.alig_pos()[1], QSize(S * 2, S), self)),
-                             'b': Timer(text_label(GAME_TIME, self.alig_pos()[2], self.alig_pos()[3], QSize(S * 2, S), self))}
+        self.timers: dict = {'w': Timer(text_label(GAME_TIME, Qt.AlignHCenter | Qt.AlignBottom, (S * 4, S * 9), QSize(S * 2, S), self)),
+                             'b': Timer(text_label(GAME_TIME, Qt.AlignHCenter | Qt.AlignTop, (S * 4, 0), QSize(S * 2, S), self))}
         self.chessgui: ChessGUI = ChessGUI(self, self.color)
         self.chessgui.installEventFilter(self.chessgui)
         self.hide()
-
-    def alig_pos(self) -> list:
-        if self.color == 'w':
-            return [Qt.AlignHCenter | Qt.AlignBottom, (S * 4, S * 9), Qt.AlignHCenter | Qt.AlignTop, (S * 4, 0)]
-        return [Qt.AlignHCenter | Qt.AlignTop, (S * 4, 0), Qt.AlignHCenter | Qt.AlignBottom, (S * 4, S * 9)]
 
     def closeEvent(self, event):
         self.end_game()
@@ -35,10 +30,10 @@ class ChessGame(QWidget):
 
     def timer_control(self):
         while self.chessgui.enable_mouse_click and str_time_to_float(self.timers['b'].time) > 0 and str_time_to_float(self.timers['w'].time) > 0:
-            if self.chessgui.chess.chessboard[self.chessgui.chess.last_move[1][0]][self.chessgui.chess.last_move[1][1]][0] == 'b':
+            if self.color == 'w' and self.chessgui.chess.chessboard[self.chessgui.chess.last_move[1][0]][self.chessgui.chess.last_move[1][1]][0] == 'b':
                 self.timers['b'].pause()
                 self.timers['w'].resume()
-            else:
+            elif self.color == 'b' and self.chessgui.chess.chessboard[self.chessgui.chess.last_move[1][0]][self.chessgui.chess.last_move[1][1]][0] == 'b':
                 self.timers['w'].pause()
                 self.timers['b'].resume()
             sleep(TICK_PERIOD / 2)
