@@ -14,7 +14,7 @@ class ChessLogic:
             ['wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp'],
             ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']]
         self.castling = Castling()
-        self.last_move = [(0, 0), (0, 0)]
+        self.last_move = [(7, 7), (7, 7)]
 
     def position(self, piece: str) -> tuple:
         for row in range(len(self.chessboard)):

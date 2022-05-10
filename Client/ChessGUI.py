@@ -11,16 +11,16 @@ move_buffer, check_buffer, position_buffer, capture_buffer = [], [], [], []
 
 
 class ChessGUI(QWidget):
-    def __init__(self, parent: QWidget):
+    def __init__(self, parent: QWidget, color: str = '?'):
         super().__init__(parent=parent)
         self.audio_player = QMediaPlayer()
         self.sound: str = ''
         self.enable_mouse_click: bool = True
 
         self.chess: ChessLogic = ChessLogic()
-        self.label: Label = Label(self, self.chess)
-        self.turn: int = 1
-        self.color = '?'
+        self.color = color
+        self.label: Label = Label(self, self.chess, self.color)
+        self.turn: int = 0
 
         self.move(S, S)
         self.setFixedSize(QSize(S * 8, S * 8))
@@ -31,7 +31,9 @@ class ChessGUI(QWidget):
     # @DECORATOR
     def mousePressEvent(self, click) -> None:
         global x1, x2, y1, y2, move_buffer
-        if (self.color == 'w' and self.turn % 2 != 1) or (self.color == 'b' and self.turn % 2 != 0):
+        print("IN")
+        if (self.color == 'w' and self.turn % 2 != 1) or (self.color == 'b' and self.turn % 2 != 0) or (self.color == 'b' and self.chess.last_move == [(0, 0), (0, 0)]):
+            print("RETURNED NONE")
             return None
         if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // S][click.x() // S] == '--'):
             if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // S][click.x() // S][0] == self.chess.chessboard[self.chess.last_move[1][0]][self.chess.last_move[1][1]][0]):
@@ -50,10 +52,18 @@ class ChessGUI(QWidget):
                         self.play_sound(self.sound)
 
     def manual_interaction(self, _x1, _y1, _x2, _y2) -> None:
-        if self.chess.last_move == [(_x1, _y1), (_x2, _y2)]:
+        # if self.chess.last_move == [(abs(7-_x1), abs(7-_y1)), (abs(7-_x2), abs(7-_y2))]:
+        print(self.chess.last_move, [(_x1, _y1), (_x2, _y2)])
+        # if self.chess.last_move == [(abs(7-_x1), abs(7-_y1)), (abs(7-_x2), abs(7-_y2))]:
+        if self.chess.last_move == [(_x1, _y1), (_x2, _y2)] or [(_x1, _y1), (_x2, _y2)] == [(0, 0), (0, 0)]:
+            print("RETURN FROM SIMILAR PREV MOVE")
             return None
+        # self.turn += 1
         global x1, x2, y1, y2, move_buffer
+        print(f"GOT {_x1, _y1, _x2, _y2}")
+        # move_buffer.append([_x1, _y1])
         move_buffer.append([_x1, _y1])
+        # move_buffer.append([_x2, _y2])
         move_buffer.append([_x2, _y2])
         x1, y1 = move_buffer[0][0], move_buffer[0][1]
         self.fill_buffers()
@@ -66,6 +76,9 @@ class ChessGUI(QWidget):
             self.turn += 1
             self.chess.last_move = [(x1, y1), (x2, y2)]
             self.play_sound(self.sound)
+
+    def resizeEvent(self, event) -> None:
+        pass
 
     # @DECORATOR
     def eventFilter(self, obj, event) -> bool:
@@ -249,7 +262,7 @@ class Promotion(QWidget):
 
 
 class Label:
-    def __init__(self, window: QWidget, chess: ChessLogic):
+    def __init__(self, window: QWidget, chess: ChessLogic, color: str):
         self.background: list = self.create_background(window, chess)
         self.position: list = self.create_indicators('position', window, chess)
         self.check: list = self.create_indicators('check', window, chess)
@@ -257,7 +270,7 @@ class Label:
         self.checkmate: list = self.create_indicators('checkmate', window, chess)
         self.stalemate: list = self.create_indicators('stalemate', window, chess)
         self.capture: list = self.create_indicators('capture', window, chess)
-        self.pieces: list = self.create_pieces(window, chess)
+        self.pieces: list = self.create_pieces(window, chess, color)
 
     # labels
     @staticmethod
@@ -272,14 +285,20 @@ class Label:
         return _background
 
     @staticmethod
-    def create_pieces(window: QWidget, chess: ChessLogic) -> list:
+    def create_pieces(window: QWidget, chess: ChessLogic, color: str) -> list:
         _pieces: list = []
         for y in range(len(chess.chessboard)):
             _pieces.append([])
             for x in range(len(chess.chessboard)):
                 _pieces[y].append(QLabel(parent=window))
                 if chess.chessboard[y][x] != '--':
-                    _pieces[y][x] = image_label(x * S, y * S, S, S, chess.chessboard[y][x], window)
+                    piece = chess.chessboard[y][x]
+                    if color == 'b':
+                        if chess.chessboard[y][x][0] == 'w':
+                            piece = 'b' + chess.chessboard[y][x][1]
+                        else:
+                            piece = 'w' + chess.chessboard[y][x][1]
+                    _pieces[y][x] = image_label(x * S, y * S, S, S, piece, window)
                     _pieces[y][x].show()
         return _pieces
 

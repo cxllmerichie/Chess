@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut
-from PyQt5.QtGui import QPixmap, QFont, QKeySequence
+from PyQt5.QtGui import QPixmap, QFont, QKeySequence, QResizeEvent
 from Client.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, S
 from Client.Library import app_btn, game_btn, app_label, State, Info
 from Client.ChessGame import ChessGame
@@ -20,17 +20,17 @@ class Application(QMainWindow):
         self.setWindowTitle('Chess (Pre-Alpha)')
         self.set_status_bar()
 
-        self.chessgame = ChessGame(self)
+        self.chessgame: ChessGame = ChessGame(self, '?')
         self.multiplayer_state: State = State.Waiting
 
         self.background: QLabel = self.create_background()
         self.menu_buttons: list = self.menu_btns()
         self.game_buttons: list = self.game_btns()
         self.shortcut_full_screen, self.shortcut_close_application, self.shortcut_return_to_menu = self.shortcuts()
+        self.information: dict = self.information_labels()
 
         self.setMinimumSize(self.chessgame.width(), self.chessgame.height())
         self.move(SW / 2 - self.width() / 2, SH / 2 - self.height() / 2)
-        self.information: dict = self.information_labels()
         self.showNormal()
 
     def information_labels(self) -> dict:
@@ -140,9 +140,8 @@ class Application(QMainWindow):
     # @DECORATOR
     def closeEvent(self, event):
         if self.message_box_reply('Exit', 'Close the application?') == QMessageBox.Yes:
-            if self.chessgame is not None:
-                self.chessgame.end_game()
-                self.return_to_menu(False)
+            self.chessgame.end_game()
+            self.return_to_menu(False)
             event.accept()
         else:
             event.ignore()
@@ -151,8 +150,7 @@ class Application(QMainWindow):
     def resizeEvent(self, event):
         self.resize_buttons()
         self.resize_information()
-        if self.chessgame is not None:
-            self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
+        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
         self.resize_buttons()
         self.resize_background()
 
@@ -196,28 +194,31 @@ class Application(QMainWindow):
     def multiplayer_game(self):
         self.multiplayer_state = State.Waiting
         self.show_waiting_screen()
+        network: Client = Client()
+        color = network.receive()[10]
+        self.chessgame = ChessGame(self, color)
+        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
+        self.chessgame.show()
+        del network
         start_new_thread(self.connect_to_server, ())
+        # Это просто пиздец а не костыль (строка 199 + строка 205): из-за того что подключение к серверу
+        # вызвано в другом треде, при ручном вызове функции ресайза инфо-лейблов в треде с подключением,
+        # фреймворк жалуеться на то что родитель в другом треде,
+        # но если заресайтить окно так как это обычно происходит после вызова этого треда сразу же,
+        # он как-то идентифицирует тред и показывает инфо лейб корректно без доп. ресайза после
+        self.resizeEvent(QResizeEvent)
 
     def show_waiting_screen(self):
         self.statusBar().hide()
         self.hide_menu_buttons()
         self.change_background(GAME_BACKGROUND)
-        self.new_game()
-        self.chessgame.show()
         self.information['waiting'] = app_label(Info.Waiting.value, QSize(self.width(), self.height()), self)
         self.information['waiting'].show()
 
     def start_game(self):
-        """while True:
-            if self.multiplayer_state is State.Started:
-                break"""
         self.information['waiting'].hide()
         self.chessgame.start_game()
         self.show_game_buttons()
-
-    def new_game(self):
-        self.chessgame = ChessGame(self)
-        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
 
     def connect_to_server(self):
         fps: Clock = Clock()
@@ -232,8 +233,7 @@ class Application(QMainWindow):
             elif self.multiplayer_state is State.Finished:
                 network.send(DISCONNECT)
             l: list = self.chessgame.chessgui.chess.last_move
-            s: str = f'{l[0][0]},{l[0][1]},{l[1][0]},{l[1][1]}, , '
-            reply: str = network.send(s)
+            reply: str = network.send(f'{abs(7-l[0][0])},{abs(7-l[0][1])},{abs(7-l[1][0])},{abs(7-l[1][1])}, , ')
             if reply == RESIGN:
                 print('OPPONENT RESIGNED')
                 self.chessgame.end_game()
@@ -242,8 +242,11 @@ class Application(QMainWindow):
             elif reply == SUGGESTDRAW:
                 print('OPPONENT SUGGEST DRAW')
                 self.end_game_message(QMessageBox.Question, 'Draw by agreement', 'Do you agree for a draw?', State.AcceptedDraw)
-                network.send(ACCEPTEDDRAW)
-                break
+                if self.multiplayer_state == State.AcceptedDraw:
+                    self.multiplayer_state = State.AcceptedDraw
+                    network.send(ACCEPTEDDRAW)
+                    self.information['draw'].show()
+                    break
             elif reply == DISCONNECT:
                 print('OPPONENT DISCONNECTED')
                 self.chessgame.end_game()
@@ -251,7 +254,7 @@ class Application(QMainWindow):
             elif reply == ACCEPTEDDRAW:
                 print('OPPONENT ACCEPTED DRAW')
                 self.chessgame.end_game()
-                self.draw.show()
+                self.information['draw'].show()
             op: list = reply.split(',')
             try:
                 self.chessgame.chessgui.manual_interaction(int(op[0]), int(op[1]), int(op[2]), int(op[3]))
@@ -268,4 +271,3 @@ class Application(QMainWindow):
                     break
             except ValueError or IndexError:
                 print('Draw works properly')
-

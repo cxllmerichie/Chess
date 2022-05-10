@@ -6,7 +6,7 @@
 # ToDo: MULTI multiplayer
 # ToDo: show the chessboard correctly for black player too
 # ToDo: fix promotion
-# ToDo: fix buttons (draw, resign)
+# ToDo: fix buttons draw
 # ToDo: self-calculating bytes amount for client and server
 
 from PyQt5.QtWidgets import QApplication
@@ -26,5 +26,5 @@ if __name__ == '__main__':
     server.close()
 
     application: QApplication = QApplication(argv)
-    client: Application = Application()
+    Application()
     application.exec()

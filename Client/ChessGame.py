@@ -9,19 +9,22 @@ from time import sleep
 
 
 class ChessGame(QWidget):
-    def __init__(self, parent: QWidget):
+    def __init__(self, parent: QWidget, color: str):
         super().__init__(parent=parent)
         self.setWindowFlag(Qt.FramelessWindowHint)
         self.setFixedSize(QSize(S * 10, S * 10))
-
+        self.color: str = color
         self.text_labels()
-
-        self.timers: dict = {'w': Timer(text_label(GAME_TIME, Qt.AlignHCenter | Qt.AlignBottom, (S * 4, S * 9), QSize(S * 2, S), self)),
-                             'b': Timer(text_label(GAME_TIME, Qt.AlignHCenter | Qt.AlignTop, (S * 4, 0), QSize(S * 2, S), self))}
-
-        self.chessgui = ChessGUI(self)
+        self.timers: dict = {'w': Timer(text_label(GAME_TIME, self.alig_pos()[0], self.alig_pos()[1], QSize(S * 2, S), self)),
+                             'b': Timer(text_label(GAME_TIME, self.alig_pos()[2], self.alig_pos()[3], QSize(S * 2, S), self))}
+        self.chessgui: ChessGUI = ChessGUI(self, self.color)
         self.chessgui.installEventFilter(self.chessgui)
         self.hide()
+
+    def alig_pos(self) -> list:
+        if self.color == 'w':
+            return [Qt.AlignHCenter | Qt.AlignBottom, (S * 4, S * 9), Qt.AlignHCenter | Qt.AlignTop, (S * 4, 0)]
+        return [Qt.AlignHCenter | Qt.AlignTop, (S * 4, 0), Qt.AlignHCenter | Qt.AlignBottom, (S * 4, S * 9)]
 
     def closeEvent(self, event):
         self.end_game()
@@ -43,10 +46,12 @@ class ChessGame(QWidget):
 
     def text_labels(self):
         for i in range(1, 9, 1):
-            text_label(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignBottom, (i * S, 0), QSize(S, S), self)
-            text_label(str(ascii_uppercase[i - 1]), Qt.AlignHCenter | Qt.AlignTop, (S * i, S * 9), QSize(S, S), self)
-            text_label(str(9 - i), Qt.AlignVCenter | Qt.AlignLeft, (S * 9 + 0.1 * S, S * i), QSize(0.9 * S, S), self)
-            text_label(str(9 - i), Qt.AlignVCenter | Qt.AlignRight, (0, S * i), QSize(0.9 * S, S), self)
+            letter: str = str(ascii_uppercase[i - 1]) if self.color == 'w' else str(ascii_uppercase[8-i])
+            text_label(letter, Qt.AlignHCenter | Qt.AlignBottom, (i * S, 0), QSize(S, S), self)
+            text_label(letter, Qt.AlignHCenter | Qt.AlignTop, (S * i, S * 9), QSize(S, S), self)
+            digit: str = str(9 - i) if self.color == 'w' else str(i)
+            text_label(digit, Qt.AlignVCenter | Qt.AlignLeft, (S * 9 + 0.1 * S, S * i), QSize(0.9 * S, S), self)
+            text_label(digit, Qt.AlignVCenter | Qt.AlignRight, (0, S * i), QSize(0.9 * S, S), self)
 
     def end_game(self):
         self.chessgui.enable_mouse_click = False

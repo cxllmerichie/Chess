@@ -133,10 +133,13 @@ def str_time_to_float(_time: str) -> float:
 
 
 class State(Enum):
+    NoState = -1
+    Waiting = 2
     Resigned = 4
     SuggestedDraw = 6
     AcceptedDraw = 5
-    Waiting = 2
+    Defeated = 7
+    Won = 8
     Started = 0
     Finished = 1
     Proceeding = 3

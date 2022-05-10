@@ -1,4 +1,5 @@
 IP: str = '10.107.0.5'
+# IP: str = '192.168.171.96'
 PORT: int = 5555
 ENCODING: str = 'utf-8'
 CONNECTION_LIMIT: int = 2
