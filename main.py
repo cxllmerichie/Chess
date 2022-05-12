@@ -19,6 +19,7 @@ from sys import argv
 
 
 if __name__ == '__main__':
+    checkchange
     server: socket = socket(AF_INET, SOCK_STREAM)
     if server.connect_ex((IP, PORT)) is not State.Started.value:
         start_new_thread(server_startup, ())
