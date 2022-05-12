@@ -78,7 +78,7 @@ def app_label(text: str, size: QSize, color: str, window: QWidget) -> QLabel:
     label.setText(text)
     label.setFixedSize(size)
     label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
-    label.setFont(QFont('Arial', FS/4))
+    label.setFont(QFont('Arial', FS*2))
     label.setStyleSheet(f'color: {color}')
     label.move(0, 0)
     label.hide()
@@ -102,13 +102,10 @@ def game_btn(title: str, geometry: tuple, click, window: QWidget) -> QPushButton
     return button
 
 
-def app_btn(title: str, geometry: tuple, click, window: QWidget, transparent: bool = False) -> QPushButton:
+def app_btn(title: str, geometry: tuple, click, window: QWidget) -> QPushButton:
     button = QPushButton(title, parent=window)
     button.setGeometry(geometry[0], geometry[1], geometry[2], geometry[3])
-    if transparent:
-        button.setStyleSheet("background-color: rgba(255, 255, 255, 0);")
-    else:
-        button.setStyleSheet('QPushButton {background-color: #323232; color: white; font-weight: bold;}')
+    button.setStyleSheet('QPushButton {background-color: #323232; color: white; font-weight: bold;}')
     button.setFont(QFont('Helvetica', int(FS/1.1)))
     button.clicked.connect(click)
     button.hide()
@@ -166,18 +163,11 @@ class State(Enum):
 
 class Text(Enum):
     Waiting = 'Waiting for another player'
-    Resign = 'Opponent Resigned!'
+    OpponentResign = 'Opponent Resigned!'
+    SelfResign = 'You Resigned...'
     Draw = 'It is a Draw.'
     Win = 'You Win!'
     Defeat = 'You Lost...'
 
 
-clr: dict = {'waiting': 'red', 'resign': 'green', 'draw': 'gray', 'win': 'green', 'defeat': 'red'}
-
-
-class Color(Enum):
-    Waiting = 'red'
-    Resign = 'green'
-    Draw = 'gray'
-    Win = 'green'
-    Defeat = 'red'
+clr: dict = {'waiting': 'red', 'opporesign': 'green', 'selfresign': 'red', 'draw': 'gray', 'win': 'green', 'defeat': 'red'}
