@@ -78,7 +78,7 @@ def app_label(text: str, size: QSize, color: str, window: QWidget) -> QLabel:
     label.setText(text)
     label.setFixedSize(size)
     label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
-    label.setFont(QFont('Arial', FS*2))
+    label.setFont(QFont('Arial', FS/4))
     label.setStyleSheet(f'color: {color}')
     label.move(0, 0)
     label.hide()
@@ -102,12 +102,16 @@ def game_btn(title: str, geometry: tuple, click, window: QWidget) -> QPushButton
     return button
 
 
-def app_btn(title: str, geometry: tuple, click, window: QWidget) -> QPushButton:
+def app_btn(title: str, geometry: tuple, click, window: QWidget, transparent: bool = False) -> QPushButton:
     button = QPushButton(title, parent=window)
     button.setGeometry(geometry[0], geometry[1], geometry[2], geometry[3])
-    button.setStyleSheet('QPushButton {background-color: #323232; color: white; font-weight: bold;}')
-    button.setFont(QFont('Calibri', int(FS/1.25)))
+    if transparent:
+        button.setStyleSheet("background-color: rgba(255, 255, 255, 0);")
+    else:
+        button.setStyleSheet('QPushButton {background-color: #323232; color: white; font-weight: bold;}')
+    button.setFont(QFont('Helvetica', int(FS/1.1)))
     button.clicked.connect(click)
+    button.hide()
     return button
 
 
@@ -136,6 +140,14 @@ def convert(l: list) -> list:
     return [(abs(7-l[0][0]), abs(7-l[0][1])), (abs(7-l[1][0]), abs(7-l[1][1]))]
 
 
+class Status(Enum):
+    Singleplayer = '[Ctrl+R] start new game, [Ctrl+M] return to menu.'
+    Practice = '[Ctrl+T] enable/disable timers, [Ctrl+M] return to menu, [Ctrl+H] show/hide this hint.'
+    Multiplayer = ''
+    Menu = '[F11] enter/exit full screen mode, [Ctrl+E] exit, [Ctrl+H] show/hide this hint.'
+    Settings = ''
+
+
 class State(Enum):
     NoState = -1
     Waiting = 2
@@ -147,6 +159,9 @@ class State(Enum):
     Started = 0
     Finished = 1
     Proceeding = 3
+    Practice = 9
+    PracticeNoTime = 10
+    PracticeWithTime = 11
 
 
 class Text(Enum):

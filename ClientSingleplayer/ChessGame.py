@@ -26,6 +26,19 @@ class ChessGame(QWidget):
         self.chessgui.installEventFilter(self.chessgui)
         self.hide()
 
+    def disable_timers(self):
+        self.timers['w'].time = '00:00.00'
+        self.timers['w'].label.hide()
+        self.timers['b'].label.hide()
+
+    def enable_timers(self):
+        self.chessgui = ChessGUI(self)
+        self.timers['w'].time = '10:00.00'
+        self.timers['b'].time = '10:00.00'
+        self.timers['w'].label.show()
+        self.timers['b'].label.show()
+        self.start_game()
+
     def closeEvent(self, event):
         self.end_game()
         event.accept()
@@ -85,6 +98,9 @@ class Timer:
         self.status: bool = False
         self.thread: Thread = Thread(target=lambda: self.countdown(amount=str_time_to_float(self.time)))
 
+    def is_visible(self) -> bool:
+        return self.label.isVisible()
+
     def countdown(self, amount: float = 600) -> None:
         while amount > 0 and self.status:
             minutes, seconds_milliseconds = divmod(amount, 60)
@@ -100,6 +116,8 @@ class Timer:
     def start(self):
         if not self.status:
             self.status = True
+            self.time = GAME_TIME
+            self.thread = Thread(target=lambda: self.countdown(amount=str_time_to_float(self.time)))
             self.thread.start()
 
     def stop(self):
