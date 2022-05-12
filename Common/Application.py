@@ -1,8 +1,8 @@
-from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut
 from PyQt5.QtGui import QPixmap, QFont, QKeySequence, QResizeEvent, QIcon
 from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON
-from Common.Library import app_btn, app_label, State, Text, clr, Status
+from Common.Library import app_btn, app_label, color, Status, State, Text
 from ClientMultipalyer.ChessGame import ChessGame as MChessGame
 from ClientSingleplayer.ChessGame import ChessGame as SChessGame
 from ServerClient.config import DISCONNECT, RESIGN, SUGGESTDRAW, ACCEPTEDDRAW
@@ -21,19 +21,19 @@ class Application(QMainWindow):
         self.setWindowTitle('Chess (Pre-Alpha)')
         self.setWindowIcon(QIcon(ICON))
 
-        self.chessgame = MChessGame(self, '?')
+        self.chessgame = SChessGame(self)
         self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
-        self.state: State = State.Waiting
-        self.status: str = Status.Menu.value
+        self.state: State = State.NoState
+        self.status: str = Status.Menu
 
         self.background: QLabel = self.create_background()
         self.menu_buttons: list = self.menu_btns()
-        self.shortcuts: list = self.create_shortcuts()
         self.information: dict = self.information_labels()
+        self.show_menu_buttons()
 
         self.setMinimumSize(self.chessgame.width(), self.chessgame.height())
         self.move(SW / 2 - self.width() / 2, SH / 2 - self.height() / 2)
-        self.show_menu_buttons()
+        self.shortcuts()
         self.showNormal()
 
     def set_status_bar(self):
@@ -43,12 +43,12 @@ class Application(QMainWindow):
 
     def information_labels(self) -> dict:
         return {
-            'waiting': app_label(Text.Waiting.value, QSize(self.width(), self.height()), clr['waiting'], self),
-            'opporesign': app_label(Text.OpponentResign.value, QSize(self.width(), self.height()), clr['opporesign'], self),
-            'selfresign': app_label(Text.SelfResign.value, QSize(self.width(), self.height()), clr['selfresign'], self),
-            'draw': app_label(Text.Draw.value, QSize(self.width(), self.height()), clr['draw'], self),
-            'win': app_label(Text.Win.value, QSize(self.width(), self.height()), clr['win'], self),
-            'defeat': app_label(Text.Defeat.value, QSize(self.width(), self.height()), clr['defeat'], self)
+            'waiting': app_label(Text.Waiting, QSize(self.width(), self.height()), color['waiting'], self),
+            'opporesign': app_label(Text.OpponentResign, QSize(self.width(), self.height()), color['opporesign'], self),
+            'selfresign': app_label(Text.SelfResign, QSize(self.width(), self.height()), color['selfresign'], self),
+            'draw': app_label(Text.Draw, QSize(self.width(), self.height()), color['draw'], self),
+            'win': app_label(Text.Win, QSize(self.width(), self.height()), color['win'], self),
+            'defeat': app_label(Text.Defeat, QSize(self.width(), self.height()), color['defeat'], self)
         }
 
     def show_information(self):
@@ -62,8 +62,8 @@ class Application(QMainWindow):
     def menu_btns(self) -> list:
         return [
             app_btn('Play vs Computer', (self.width() / 2 - BW / 2, self.height() / 2 - BH, BW, BH), lambda: None, self),
-            app_btn('Play vs Player', (self.width() / 2 - BW / 2, self.height() / 2, BW, BH), lambda: self.multiplayer(), self),
-            app_btn('Practice', (self.width() / 2 - BW / 2, self.height() / 2 + BH, BW, BH), lambda: self.singleplayer(), self),
+            app_btn('Play vs Player', (self.width() / 2 - BW / 2, self.height() / 2, BW, BH), lambda: self.multiplayer_mode(), self),
+            app_btn('Practice', (self.width() / 2 - BW / 2, self.height() / 2 + BH, BW, BH), lambda: self.practice_mode(), self),
             app_btn('Settings', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 2, BW, BH), lambda: None, self),
             app_btn('Exit', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 3, BW, BH), lambda: self.close(), self)
         ]
@@ -89,7 +89,7 @@ class Application(QMainWindow):
 
     def return_to_menu_procedure(self):
         self.hide_information()
-        self.change_status_bar(Status.Menu.value)
+        self.change_status_bar(Status.Menu)
         self.hide_information()
         self.state = State.Finished
         self.chessgame.close()
@@ -136,7 +136,7 @@ class Application(QMainWindow):
             was_visible: bool = self.information[key].isVisible()
             previous_text: str = self.information[key].text()
             self.information[key].hide()
-            self.information[key] = app_label(previous_text, QSize(self.width(), self.height()), clr[key], self)
+            self.information[key] = app_label(previous_text, QSize(self.width(), self.height()), color[key], self)
             if was_visible:
                 self.information[key].show()
 
@@ -145,7 +145,6 @@ class Application(QMainWindow):
         self.background.resize(self.width(), self.height())
 
     def resize_buttons(self):
-        # menu buttons
         self.menu_buttons[0].move(self.width() / 2 - BW / 2, self.height() / 2 - BH)
         self.menu_buttons[1].move(self.width() / 2 - BW / 2, self.height() / 2)
         self.menu_buttons[2].move(self.width() / 2 - BW / 2, self.height() / 2 + BH)
@@ -162,8 +161,8 @@ class Application(QMainWindow):
         self.status = status
         self.resizeEvent(QResizeEvent)
 
-    def singleplayer(self):
-        self.change_status_bar(Status.Practice.value)
+    def practice_mode(self):
+        self.change_status_bar(Status.Practice)
         self.state = State.PracticeWithTime
         self.hide_menu_buttons()
         self.change_background(GAME_BACKGROUND)
@@ -172,17 +171,14 @@ class Application(QMainWindow):
         self.chessgame.show()
         self.chessgame.start_game()
 
-    def multiplayer(self):
-        try:
-            client: Client = Client()
-        except:
-            print('[APPLICATION | CLIENT] ServerClient is down.\nThe connection was not established because the destination computer rejected the connection request.')
-            return None
+    def multiplayer_mode(self):
+        client: Client = Client()
         self.state = State.Waiting
         self.show_waiting_screen()
         self.chessgame = MChessGame(self, client.receive()[10])
         self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
         self.chessgame.show()
+        self.change_status_bar(Status.Multiplayer)
         start_new_thread(self.connect_to_server, (client, ))
         # Это просто пиздец а не костыль (строка 199 + строка 205): из-за того что подключение к серверу
         # вызвано в другом треде, при ручном вызове функции ресайза инфо-лейблов в треде с подключением,
@@ -192,13 +188,11 @@ class Application(QMainWindow):
         self.resizeEvent(QResizeEvent)
 
     def show_waiting_screen(self):
-        self.statusBar().hide()
         self.hide_menu_buttons()
         self.change_background(GAME_BACKGROUND)
-        self.information['waiting'] = app_label(Text.Waiting.value, QSize(self.width(), self.height()), clr['waiting'], self)
         self.information['waiting'].show()
 
-    def start_game(self):
+    def start_multiplayer_game(self):
         self.information['waiting'].hide()
         self.chessgame.start_game()
 
@@ -210,15 +204,27 @@ class Application(QMainWindow):
             fps.tick(200)
             if self.state is State.Resigned:
                 network.send(RESIGN)
+                self.hide_information()
+                self.information['selfresign'].show()
+                self.chessgame.end_game()
             elif self.state is State.SuggestedDraw:
                 network.send(SUGGESTDRAW)
             elif self.state is State.Finished:
                 network.send(DISCONNECT)
+                self.chessgame.end_game()
+                break
             l: list = self.chessgame.chessgui.chess.last_move
+            # win / lose messages
             if self.chessgame.chessgui.color == 'w' and self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] == self.chessgame.chessgui.color and not self.chessgame.chessgui.enable_mouse_click:
                 self.hide_information()
                 self.information['win'].show()
-            elif self.state is not State.Resigned and self.chessgame.chessgui.color == 'b' and self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] == self.chessgame.chessgui.color and not self.chessgame.chessgui.enable_mouse_click:
+            elif self.chessgame.chessgui.color == 'b' and self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] == self.chessgame.chessgui.color and not self.chessgame.chessgui.enable_mouse_click:
+                self.hide_information()
+                self.information['defeat'].show()
+            elif self.chessgame.chessgui.color == 'b' and self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] != self.chessgame.chessgui.color and not self.chessgame.chessgui.enable_mouse_click:
+                self.hide_information()
+                self.information['win'].show()
+            elif self.chessgame.chessgui.color == 'w' and self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] != self.chessgame.chessgui.color and not self.chessgame.chessgui.enable_mouse_click:
                 self.hide_information()
                 self.information['defeat'].show()
             reply: str = network.send(f'{abs(7-l[0][0])},{abs(7-l[0][1])},{abs(7-l[1][0])},{abs(7-l[1][1])}, , ')
@@ -238,30 +244,19 @@ class Application(QMainWindow):
                     self.hide_information()
                     self.information['draw'].show()
                     break
-            elif reply == DISCONNECT:
-                print('OPPONENT DISCONNECTED')
-                self.chessgame.end_game()
-                break
             elif reply == ACCEPTEDDRAW:
                 print('OPPONENT ACCEPTED DRAW')
                 self.chessgame.end_game()
                 self.hide_information()
                 self.information['draw'].show()
-            op: list = reply.split(',')
             try:
+                op: list = reply.split(',')
                 self.chessgame.chessgui.manual_interaction(int(op[0]), int(op[1]), int(op[2]), int(op[3]))
                 if op[4] == 'R' and self.state is State.Waiting:
                     self.state = State.Started
-                    self.start_game()
+                    self.start_multiplayer_game()
                 elif op[4] == ' ' and self.state is State.Started:
                     self.return_to_menu_procedure()
-                    break
-                elif self.state is State.Resigned:
-                    self.hide_information()
-                    self.information['selfresign'].show()
-                    self.chessgame.end_game()
-                if self.state is State.Finished:
-                    self.chessgame.end_game()
                     break
                 if self.state == State.AcceptedDraw:
                     print('IT IS A DRAW')
@@ -270,43 +265,24 @@ class Application(QMainWindow):
                     network.send(ACCEPTEDDRAW)
                     self.chessgame.end_game()
                     # break
-            except ValueError or IndexError:
-                print('[EXCEPTION] Exception from draw.')
+            except Exception:
+                print('[EXCEPTION] Exception from DRAW or RESIGN.')
+        if self.state is State.Resigned:
+            self.hide_information()
 
-    def create_shortcut(self, keys: str, function) -> QShortcut:
+    def shortcut(self, keys: str, function) -> QShortcut:
         shortcut: QShortcut = QShortcut(QKeySequence(keys), self)
-        shortcut.activated.connect(lambda: function)
+        shortcut.activated.connect(function)
         return shortcut
 
-    def create_shortcuts(self) -> tuple:
-        # full screen
-        full_screen_mode: QShortcut = QShortcut(QKeySequence('F11'), self)
-        full_screen_mode.activated.connect(lambda: (self.showNormal() if self.isFullScreen() else (self.hide(), self.showFullScreen())))
-        # close the application
-        close_application: QShortcut = QShortcut(QKeySequence('Ctrl+E'), self)
-        close_application.activated.connect(lambda: self.close())
-        # return to menu
-        return_to_menu: QShortcut = QShortcut(QKeySequence('Ctrl+M'), self)
-        return_to_menu.activated.connect(lambda: self.return_to_menu())
-        # enable/disable singleplayer timer
-        enable_disable_singleplayer_timer: QShortcut = QShortcut(QKeySequence('Ctrl+T'), self)
-        enable_disable_singleplayer_timer.activated.connect(lambda: self.timer_control())
-        # volume up
-        volume_up: QShortcut = QShortcut(QKeySequence(Qt.Key_Equal), self)
-        volume_up.activated.connect(lambda: self.chessgame.chessgui.audio_player.setVolume(self.chessgame.chessgui.audio_player.volume() + 10))
-        # volume down
-        volume_down: QShortcut = QShortcut(QKeySequence(Qt.Key_Minus), self)
-        volume_down.activated.connect(lambda: self.chessgame.chessgui.audio_player.setVolume(self.chessgame.chessgui.audio_player.volume() - 10))
-        # volume mute
-        volume_mute: QShortcut = QShortcut(QKeySequence('Ctrl+-'), self)
-        volume_mute.activated.connect(lambda: self.chessgame.chessgui.audio_player.setVolume(0 if self.chessgame.chessgui.audio_player.volume() != 0 else 100))
-        # show / hide hints on the left bottom corner
-        show_hide_hints: QShortcut = QShortcut(QKeySequence('Ctrl+H'), self)
-        show_hide_hints.activated.connect(lambda: (self.statusBar().hide() if self.statusBar().isVisible() else self.statusBar().show()))
-        # resign
-        resign: QShortcut = QShortcut(QKeySequence('Ctrl+R'), self)
-        resign.activated.connect(lambda: self.end_game_message('Resignation', 'Do you want to resign?', State.Resigned))
-        # draw
-        draw: QShortcut = QShortcut(QKeySequence('Ctrl+D'), self)
-        draw.activated.connect(lambda: self.suggest_draw())
-        return full_screen_mode, close_application, return_to_menu, enable_disable_singleplayer_timer, volume_up, volume_down, volume_mute, show_hide_hints, resign, draw
+    def shortcuts(self):
+        self.shortcut('F11', (lambda: self.showNormal() if self.isFullScreen() else (self.hide(), self.showFullScreen()))),
+        self.shortcut('Ctrl+E', lambda: self.close()),
+        self.shortcut('Ctrl+M', lambda: self.return_to_menu()),
+        self.shortcut('Ctrl+T', lambda: self.timer_control()),
+        self.shortcut('=', lambda: self.chessgame.chessgui.audio_player.setVolume(self.chessgame.chessgui.audio_player.volume() + 10)),
+        self.shortcut('-', lambda: self.chessgame.chessgui.audio_player.setVolume(self.chessgame.chessgui.audio_player.volume() - 10)),
+        self.shortcut('Ctrl+-', lambda: self.chessgame.chessgui.audio_player.setVolume(0 if self.chessgame.chessgui.audio_player.volume() != 0 else 100)),
+        self.shortcut('Ctrl+H', lambda: (self.statusBar().hide() if self.statusBar().isVisible() else self.statusBar().show())),
+        self.shortcut('Ctrl+R', lambda: self.end_game_message('Resignation', 'Do you want to resign?', State.Resigned)),
+        self.shortcut('Ctrl+D', lambda: self.suggest_draw())

@@ -1,11 +1,10 @@
 # ToDo: AI algorithm
 # ToDo: voice assistant
-# ToDo: log.db
+# ToDo: create and store log.db for singleplayer (and practice)
 # FOR MULTIPLAYER
-# ToDo: loser&winner, starting messages etc.
 # ToDo: MULTI multiplayer
 # ToDo: fix promotion
-# ToDo: fix buttons draw (if we wait too long after draw was suggested the responding client crashes)
+# ToDo: fix buttons draw & resign
 # ToDo: self-calculating bytes amount for client and server
 # ToDo: generate requirements
 # ToDo: generate executive

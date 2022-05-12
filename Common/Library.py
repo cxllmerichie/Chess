@@ -137,10 +137,10 @@ def convert(l: list) -> list:
     return [(abs(7-l[0][0]), abs(7-l[0][1])), (abs(7-l[1][0]), abs(7-l[1][1]))]
 
 
-class Status(Enum):
+class Status:
     Singleplayer = '[Ctrl+R] start new game, [Ctrl+M] return to menu.'
     Practice = '[Ctrl+T] enable/disable timers, [Ctrl+M] return to menu, [Ctrl+H] show/hide this hint.'
-    Multiplayer = ''
+    Multiplayer = '[Ctrl+R] resign, [Ctrl+D] suggest draw, [Ctrl+M] return to menu, [Ctrl+H] show/hide this hint.'
     Menu = '[F11] enter/exit full screen mode, [Ctrl+E] exit, [Ctrl+H] show/hide this hint.'
     Settings = ''
 
@@ -161,7 +161,7 @@ class State(Enum):
     PracticeWithTime = 11
 
 
-class Text(Enum):
+class Text:
     Waiting = 'Waiting for another player'
     OpponentResign = 'Opponent Resigned!'
     SelfResign = 'You Resigned...'
@@ -170,4 +170,4 @@ class Text(Enum):
     Defeat = 'You Lost...'
 
 
-clr: dict = {'waiting': 'red', 'opporesign': 'green', 'selfresign': 'red', 'draw': 'gray', 'win': 'green', 'defeat': 'red'}
+color: dict = {'waiting': 'red', 'opporesign': 'green', 'selfresign': 'red', 'draw': 'gray', 'win': 'green', 'defeat': 'red'}
