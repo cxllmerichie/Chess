@@ -149,6 +149,9 @@ class State(Enum):
     NoState = -1
     Waiting = 2
     Resigned = 4
+    Draw = 12
+    OpponentDisconnected = 13
+    SelfDisconnected = 14
     SuggestedDraw = 6
     AcceptedDraw = 5
     Defeated = 7
@@ -168,6 +171,7 @@ class Text:
     Draw = 'It is a Draw.'
     Win = 'You Win!'
     Defeat = 'You Lost...'
+    OpponentDisconnect = 'Opponent disconnected'
 
 
-color: dict = {'waiting': 'red', 'opporesign': 'green', 'selfresign': 'red', 'draw': 'gray', 'win': 'green', 'defeat': 'red'}
+color: dict = {'waiting': 'red', 'opporesign': 'green', 'selfresign': 'red', 'draw': 'gray', 'win': 'green', 'defeat': 'red', 'disconnect': 'gray'}

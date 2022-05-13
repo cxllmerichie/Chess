@@ -1,6 +1,6 @@
 from socket import AF_INET, SOCK_STREAM, socket, error
 from threading import Thread, active_count
-from Server.config import IP, PORT, ENCODING, DEFAULT, BYTES, CONNECTION_LIMIT, DISCONNECT, RESIGN, SUGGESTDRAW, ACCEPTEDDRAW
+from ServerClient.config import IP, PORT, ENCODING, DEFAULT, BYTES, CONNECTION_LIMIT, DISCONNECT, RESIGN, SUGGESTDRAW, ACCEPTEDDRAW
 
 
 class Server:
@@ -14,7 +14,7 @@ class Server:
         except error as socket_error:
             self.startup_allowed: bool = False
             print(f'[SERVER | CLIENT HANDLER] Error. (orig: {str(socket_error)})')
-        self.alldata: list = [DEFAULT+'w', DEFAULT+'b']
+        self.alldata: list = [DEFAULT[:11]+'w,', DEFAULT[:11]+'b,']
 
     def client(self, client: socket, connection: int, address) -> None:
         client.send(str.encode(self.alldata[connection]))
@@ -38,7 +38,7 @@ class Server:
                     client.sendall(str.encode(ACCEPTEDDRAW))
                 else:
                     try:
-                        self.alldata[connection] = data[:8] + 'R,' + self.alldata[connection][10]
+                        self.alldata[connection] = data + self.alldata[connection][10:13] + 'R'
                     except IndexError:
                         pass  # opponent resigned or it is a draw
                     reply = self.alldata[0] if connection == 1 else self.alldata[1]

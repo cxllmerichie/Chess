@@ -21,6 +21,7 @@ class ChessGUI(QWidget):
         self.chess: ChessLogic = ChessLogic(self.color)
         self.label: Label = Label(self, self.chess, self.color)
         self.turn: int = 0
+        self.promoted: list = [False, '  ']
 
         self.move(S, S)
         self.setFixedSize(QSize(S * 8, S * 8))
@@ -49,7 +50,13 @@ class ChessGUI(QWidget):
                         self.chess.last_move = [(x1, y1), (x2, y2)]
                         self.play_sound(self.sound)
 
-    def manual_interaction(self, _x1, _y1, _x2, _y2) -> None:
+    def manual_interaction(self, _x1, _y1, _x2, _y2, promotion_piece: str) -> None:
+        if promotion_piece != '  ' and self.chess.chessboard[_x2][_y2] != promotion_piece:
+            self.chess.chessboard[_x2][_y2] = promotion_piece
+            self.label.pieces[_x2][_y2].hide()
+            self.label.pieces[_x2][_y2] = image_label(_x2 * S, _y2 * S, S, S, promotion_piece, self)
+            self.label.pieces[_x2][_y2].show()
+            self.end_game_procedures()
         if self.chess.last_move == [(_x1, _y1), (_x2, _y2)] or [(_x1, _y1), (_x2, _y2)] == convert(DEFAULT_MOVE):
             return None
         global x1, x2, y1, y2, move_buffer
@@ -59,7 +66,7 @@ class ChessGUI(QWidget):
         self.fill_buffers()
         self.label.show_indicators()
         x2, y2 = move_buffer[1][0], move_buffer[1][1]
-        is_moved: bool = self.manual_move_action()
+        is_moved: bool = self.manual_move_action(promotion_piece)
         self.label.hide_indicators()
         self.end_game_procedures()
         if is_moved:
@@ -107,7 +114,7 @@ class ChessGUI(QWidget):
         move_buffer.clear()
         return False
 
-    def manual_move_action(self) -> bool:
+    def manual_move_action(self, promotion_piece: str) -> bool:
         if (x2, y2) in position_buffer or (x2, y2) in capture_buffer:
             self.sound = 'move'
             castling = self.is_castling() if self.color == 'w' else self.manual_is_castling()
@@ -124,9 +131,13 @@ class ChessGUI(QWidget):
     def is_promotion(self) -> bool:
         if self.chess.chessboard[x1][y1][1] == 'p':
             if (self.chess.chessboard[x1][y1][0] == 'w' and x2 == 0) or (self.chess.chessboard[x1][y1][0] == 'b' and x2 == 7):
-                self.enable_mouse_click = False
-                Promotion(self, (x2, y2), self.chess.chessboard[x1][y1]).show()
+                # self.enable_mouse_click = False
+                if self.color == 'w':
+                    Promotion(self, (x2, y2), self.chess.chessboard[x1][y1]).show()
+                elif self.color == 'b':
+                    BlackPromotion(self, (x2, y2), self.chess.chessboard[x1][y1]).show()
                 self.sound = 'castling'
+                self.promoted[0] = True
                 return True
         return False
 
@@ -252,13 +263,46 @@ class ChessGUI(QWidget):
         return self.stalemate_for('w') or self.stalemate_for('b')
 
 
+class BlackPromotion(QWidget):
+    def __init__(self, _window: ChessGUI, position: tuple, piece: str):
+        self.window: ChessGUI = _window
+        self.x = position[0]
+        self.y = position[1]
+        super().__init__(self.window)
+
+        self.case: list = [(0, 'Q'), (S, 'R'), (S * 2, 'N'), (S * 3, 'B')]
+        for _tuple in self.case:
+            image_label(0, _tuple[0], S, S, 'promotion', self).show()
+            image_label(0, _tuple[0], S, S, 'b' + _tuple[1], self).show()
+
+        self.move(self.y * S, 0)
+        self.setFixedSize(QSize(S, S * 4))
+        self.setWindowFlag(Qt.FramelessWindowHint)
+        self.show()
+
+    # @DECORATOR
+    def mousePressEvent(self, click):
+        piece: str = 'b' + self.case[click.y() // S][1]
+        self.window.promoted[1] = piece
+        self.promotional_replacement(piece)
+        self.hide()
+
+    def promotional_replacement(self, _piece: str):
+        self.window.chess.chessboard[self.x][self.y] = _piece
+        self.window.label.pieces[self.x][self.y].hide()
+        self.window.label.pieces[self.x][self.y] = image_label(self.y * S, self.x * S, S, S, _piece, self.window)
+        self.window.label.pieces[self.x][self.y].show()
+        if self.window.end_game_procedures():
+            self.window.play_sound('check')
+
+
 class Promotion(QWidget):
     def __init__(self, _window: ChessGUI, position: tuple, piece: str):
         self.window: ChessGUI = _window
         self.color: str = piece[0]
         self.x = position[0]
         self.y = position[1]
-        super(Promotion, self).__init__(self.window)
+        super().__init__(self.window)
 
         self.case: list = [(0, 'Q'), (S, 'R'), (S * 2, 'N'), (S * 3, 'B')] if self.color == 'w' else [(0, 'B'), (S, 'N'), (S * 2, 'R'), (S * 3, 'Q')]
         for _tuple in self.case:
@@ -268,12 +312,12 @@ class Promotion(QWidget):
         self.move(self.y * S, 0) if self.color == 'w' else self.move(self.y * S, S * 4)
         self.setFixedSize(QSize(S, S * 4))
         self.setWindowFlag(Qt.FramelessWindowHint)
-        self.hide()
+        self.show()
 
     # @DECORATOR
     def mousePressEvent(self, click):
-        self.window.enable_mouse_click = True
         piece: str = self.color + self.case[click.y() // S][1]
+        self.window.promoted[1] = piece
         self.promotional_replacement(piece)
         self.hide()
 
