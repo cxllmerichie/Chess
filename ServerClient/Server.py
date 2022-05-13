@@ -1,71 +1,83 @@
 from socket import AF_INET, SOCK_STREAM, socket, error
 from threading import Thread, active_count
-from ServerClient.config import IP, PORT, ENCODING, DEFAULT, BYTES, CONNECTION_LIMIT, DISCONNECT, RESIGN, SUGGESTDRAW, ACCEPTEDDRAW
+from config import IP, PORT, ENCODING, DEFAULT, BYTES, CONNECTION_LIMIT, DISCONNECT, RESIGN, SUGGESTDRAW, ACCEPTEDDRAW
+import random
 
 
 class Server:
     def __init__(self):
-        self.startup_allowed: bool = True
-        self.connection: int = 0
+        self.connections: int = 0
+        self.data: dict = {}
         self.server: socket = socket(AF_INET, SOCK_STREAM)
         try:
             self.server.bind((IP, PORT))
             print(f'[SERVER] Server started at {IP, PORT}.')
         except error as socket_error:
-            self.startup_allowed: bool = False
             print(f'[SERVER | CLIENT HANDLER] Error. (orig: {str(socket_error)})')
-        self.alldata: list = [DEFAULT[:11]+'w,', DEFAULT[:11]+'b,']
 
-    def client(self, client: socket, connection: int, address) -> None:
-        client.send(str.encode(self.alldata[connection]))
+    def client(self, client: socket, player_id: int, pair_id: int, address) -> None:
+        client.send(str.encode(self.data[pair_id][player_id]))
         while True:
             try:
-                data = client.recv(BYTES).decode(ENCODING)
+                data = client.recv(BYTES).decode(encoding=ENCODING)
                 if not data:
                     print('[SERVER | CLIENT HANDLER] No data. Disconnecting.')
                     break
                 elif data == DISCONNECT:
-                    self.alldata[connection] = DISCONNECT
+                    self.data[pair_id][player_id] = DISCONNECT
                     client.sendall(str.encode(DISCONNECT))
                 elif data == RESIGN:
-                    self.alldata[connection] = RESIGN
+                    self.data[pair_id][player_id] = RESIGN
                     client.sendall(str.encode(RESIGN))
                 elif data == SUGGESTDRAW:
-                    self.alldata[connection] = SUGGESTDRAW
+                    self.data[pair_id][player_id] = SUGGESTDRAW
                     client.sendall(str.encode(SUGGESTDRAW))
                 elif data == ACCEPTEDDRAW:
-                    self.alldata[connection] = ACCEPTEDDRAW
+                    self.data[pair_id][player_id] = ACCEPTEDDRAW
                     client.sendall(str.encode(ACCEPTEDDRAW))
                 else:
                     try:
-                        self.alldata[connection] = data + self.alldata[connection][10:13] + 'R'
-                    except IndexError:
+                        self.data[pair_id][player_id] = data + self.data[pair_id][player_id][10:13] + 'R'
+                    except (IndexError, TypeError):
                         pass  # opponent resigned or it is a draw
-                    reply = self.alldata[0] if connection == 1 else self.alldata[1]
-                    # print(f'Received (#{connection}): {data}')
-                    # print(f'Sending (#{connection}): {reply}')
+                    reply = self.data[pair_id][0] if player_id == 1 else self.data[pair_id][1]
+                    # print(f'Received (#{player}): {data}')
+                    # print(f'Sending (#{player}): {reply}')
                     client.sendall(str.encode(reply))
-            except error as socket_error:
-                print(f'[SERVER | CLIENT HANDLER] Mainloop error. (orig: {str(socket_error)})')
+            except Exception as exception:
+                print(f'[SERVER | CLIENT HANDLER] Mainloop exception. (orig: {str(exception)})')
                 break
         print(f'[SERVER | CLIENT HANDLER] Closing connection for {address}.')
-        self.alldata: list = [DEFAULT+'w', DEFAULT+'b']
-        self.connection -= 1
+        try:
+            del self.data[pair_id]
+            print(f'[SERVER | CLIENT HANDLER] Game(id:{pair_id}) data successfully erased from the server.')
+        except Exception as exception:
+            print(f'[SERVER | CLIENT HANDLER] Failed attempt to erase game(id:{pair_id}) data. ')
+        self.connections -= 1
         client.close()
-        print(f'[SERVER | CLIENT HANDLER] Connection closed.')
+        print(f'[SERVER | CLIENT HANDLER] Connection with {address} closed.')
 
     def listener(self) -> None:
-        if not self.startup_allowed:
-            return None
         self.server.listen(CONNECTION_LIMIT)
         print(f'[SERVER | LISTENER] Waiting for connections...')
         while True:
             client, address = self.server.accept()
             print(f'[SERVER | LISTENER] Connection with {address} has been established.')
-            Thread(target=self.client, args=(client, self.connection, address)).start()
-            print(f'[SERVER | LISTENER] Active connections (threads): {active_count()-1} (or {active_count()-2}).')
-            print(f'[SERVER | LISTENER] Active connections (self.connection): {self.connection+1}.')
-            self.connection += 1
+
+            self.connections += 1
+            player_id: int = 0
+            pair_id: int = (self.connections - 1) // 2
+            colors: tuple = ('w', 'b') if random.choice([1, 2]) == 1 else ('b', 'w')
+            if self.connections % 2 == 1:
+                self.data[pair_id] = [DEFAULT[:11] + colors[0] + ',', DEFAULT[:11] + colors[1] + ',']
+                print(f'[SERVER | LISTENER] New game(id:{pair_id}) created.')
+            else:
+                print(f'[SERVER | LISTENER] Connected to existing game(id:{pair_id}). ')
+                player_id = 1
+
+            Thread(target=self.client, args=(client, player_id, pair_id, address)).start()
+            print(f'[SERVER | LISTENER] Active connections (threads): {active_count()-1}).')
+            print(f'[SERVER | LISTENER] Active connections (self.connection): {self.connections}.')
 
 
 def server_startup() -> None:

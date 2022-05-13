@@ -7,7 +7,7 @@ class Client:
         self.client: socket = socket(AF_INET, SOCK_STREAM)
         try:
             self.client.connect((IP, PORT))
-            self.data = self.client.recv(BYTES).decode(ENCODING)
+            self.data = self.client.recv(BYTES).decode(encoding=ENCODING)
         except error as socket_error:
             print(f'[CLIENT] Error. (orig: {socket_error})')
 
@@ -20,6 +20,6 @@ class Client:
     def send(self, data):
         try:
             self.client.send(str.encode(data))
-            return self.client.recv(BYTES).decode(ENCODING)
+            return self.client.recv(BYTES).decode(encoding=ENCODING)
         except error as socket_error:
             print(f'[CLIENT | SEND] Error. (orig: {socket_error})')
