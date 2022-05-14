@@ -93,7 +93,6 @@ class ChessGUI(QWidget):
     def is_promotion(self) -> bool:
         if self.chess.chessboard[x1][y1][1] == 'p':
             if (self.chess.chessboard[x1][y1][0] == 'w' and x2 == 0) or (self.chess.chessboard[x1][y1][0] == 'b' and x2 == 7):
-                self.enable_mouse_click = False
                 Promotion(self, (x2, y2), self.chess.chessboard[x1][y1])
                 self.sound = 'castling'
                 return True
@@ -209,8 +208,8 @@ class ChessGUI(QWidget):
 
 
 class Promotion(QWidget):
-    def __init__(self, _window: QWidget, position: tuple, piece: str):
-        self.window: QWidget = _window
+    def __init__(self, window: ChessGUI, position: tuple, piece: str):
+        self.window: ChessGUI = window
         self.color: str = piece[0]
         self.x = position[0]
         self.y = position[1]

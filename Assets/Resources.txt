@@ -1,7 +1,11 @@
-Images:
-https://commons.wikimedia.org/wiki/Category:SVG_chess_pieces
+Authors contribution:
+/Assets/Images/Chessboard
+/Assets/Images/Application/background.svg
+/Assets/Images/Indicators/standardhd
+
+Images: (the rest)
+https://commons.wikimedia.org/
 https://github.com/
+
 Sound:
 https://www.chess.com/
-
-The rest is done by Author using Inkscape

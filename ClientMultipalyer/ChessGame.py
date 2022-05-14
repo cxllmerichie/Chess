@@ -14,11 +14,25 @@ class ChessGame(QWidget):
         self.setWindowFlag(Qt.FramelessWindowHint)
         self.setFixedSize(QSize(S * 10, S * 10))
         self.color: str = color
+        self.highlighters: dict = self.create_highlighters()
         self.text_labels()
         self.timers: dict = self.create_timers()
         self.chessgui: ChessGUI = ChessGUI(self, self.color)
         self.chessgui.installEventFilter(self.chessgui)
         self.hide()
+
+    def create_highlighter(self, x: int, y: int) -> QLabel:
+        label: QLabel = QLabel(self)
+        label.setStyleSheet('background-color: yellow')
+        label.setFixedSize(QSize(S*8, S/2))
+        label.move(x, y)
+        label.hide()
+        return label
+
+    def create_highlighters(self) -> dict:
+        if self.color == 'w':
+            return {'w': self.create_highlighter(S, 0.5*S), 'b': self.create_highlighter(S, S*9)}
+        return {'w': self.create_highlighter(S, S*9), 'b': self.create_highlighter(S, 0.5*S)}
 
     def create_timers(self) -> dict:
         if self.color == 'w':
@@ -37,16 +51,21 @@ class ChessGame(QWidget):
 
     def timer_control(self):
         self.timers['w'].start()
+        self.highlighters['w'].show()
         while self.chessgui.enable_mouse_click and str_time_to_float(self.timers['b'].time) > 0 and str_time_to_float(self.timers['w'].time) > 0:
             cp = ['w', 'b']
             if self.chessgui.turn != 0 and self.color == 'b':
                 cp = ['b', 'w']
             if self.chessgui.chess.chessboard[self.chessgui.chess.last_move[1][0]][self.chessgui.chess.last_move[1][1]][0] == cp[0]:
                 self.timers['w'].pause()
+                self.highlighters['b'].hide()
                 self.timers['b'].resume()
+                self.highlighters['w'].show()
             elif self.chessgui.chess.chessboard[self.chessgui.chess.last_move[1][0]][self.chessgui.chess.last_move[1][1]][0] == cp[1]:
                 self.timers['b'].pause()
+                self.highlighters['w'].hide()
                 self.timers['w'].resume()
+                self.highlighters['b'].show()
             sleep(TICK_PERIOD / 2)
         self.end_game()
 

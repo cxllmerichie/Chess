@@ -25,11 +25,11 @@ def exist(coordinates: tuple, start: int = 0, end: int = 8) -> bool:
 def image(name: str) -> str:
     if len(name) == 2:
         if 'standardhd' in PIECE_PATH:
-            return PIECE_PATH + name + '.png'
-        return PIECE_PATH + name + '.svg'
+            return f'{PIECE_PATH}{name}.png'
+        return f'{PIECE_PATH}{name}.svg'
     if name == 'dark' or name == 'light':
-        return CHESSBOARD_PATH + name + '.svg'
-    return INDICATOR_PATH + name + '.svg'
+        return f'{CHESSBOARD_PATH}{name}.svg'
+    return f'{INDICATOR_PATH}{name}.svg'
 
 
 def sound(name: str) -> str:
@@ -138,9 +138,9 @@ def convert(_list: list) -> list:
 
 class Status:
     Singleplayer = '[Ctrl+R] start new game, [Ctrl+M] return to menu.'
-    Practice = '[Ctrl+T] enable/disable timers, [Ctrl+M] return to menu, [Ctrl+H] show/hide this hint.'
+    Practice = '[Ctrl+R] reset the game, [Ctrl+T] enable timers reseting the game/disable timers, [Ctrl+M] return to menu, [Ctrl+H] show/hide this hint.'
     Multiplayer = '[Ctrl+R] resign, [Ctrl+D] suggest draw, [Ctrl+M] return to menu, [Ctrl+H] show/hide this hint.'
-    Menu = '[F11] enter/exit full screen mode, [Ctrl+E] exit, [Ctrl+H] show/hide this hint.'
+    Menu = '[F9, F10, F11] minimize/maximize/full screen mode, [Ctrl+S] show/hide settings menu, [Ctrl+E] exit, [Ctrl+H] show/hide this hint.'
     Settings = ''
 
 

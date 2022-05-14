@@ -27,16 +27,31 @@ class ChessGame(QWidget):
         self.hide()
 
     def disable_timers(self):
-        self.timers['w'].time = '00:00.00'
+        self.chessgui.enable_mouse_click = False
         self.timers['w'].label.hide()
         self.timers['b'].label.hide()
+        self.chessgui.enable_mouse_click = True
 
     def enable_timers(self):
         self.chessgui = ChessGUI(self)
         self.timers['w'].time = '10:00.00'
         self.timers['b'].time = '10:00.00'
+        self.timers['w'].label.setText(self.timers['w'].time)
+        self.timers['b'].label.setText(self.timers['b'].time)
         self.timers['w'].label.show()
         self.timers['b'].label.show()
+        self.start_game()
+
+    def reset_game(self):
+        self.chessgui.enable_mouse_click = False
+        sleep(0.5)
+        self.timers['w'].time = '10:00.00'
+        self.timers['b'].time = '10:00.00'
+        self.timers['w'].label.setText(self.timers['w'].time)
+        self.timers['b'].label.setText(self.timers['b'].time)
+        self.timers['w'].label.show()
+        self.timers['b'].label.show()
+        self.chessgui = ChessGUI(self)
         self.start_game()
 
     def closeEvent(self, event):

@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut, QWidget
+from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut, QWidget, QCheckBox, QComboBox
 from PyQt5.QtGui import QPixmap, QFont, QKeySequence, QResizeEvent, QIcon
-from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON, S, SETTINGS_BACKGROUND
+from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON, S, set_piece_style, set_chessboard_style
 from Common.Library import app_btn, app_label, color, Status, State, Text
 from ClientMultipalyer.ChessGame import ChessGame as MChessGame
 from ClientSingleplayer.ChessGame import ChessGame as SChessGame
@@ -11,6 +11,7 @@ from _thread import start_new_thread
 from contextlib import redirect_stdout
 with redirect_stdout(None):
     from pygame.time import Clock
+from os import listdir
 
 
 class Application(QMainWindow):
@@ -31,11 +32,11 @@ class Application(QMainWindow):
         self.menu_buttons: list = self.menu_btns()
         self.information: dict = self.information_labels()
         self.show_menu_buttons()
-        self.settings: Settings = Settings(self)
 
-        self.setMinimumSize(self.chessgame.width(), self.chessgame.height())
+        self.setMinimumSize(S*10, S*10)
         self.move(SW / 2 - self.width() / 2, SH / 2 - self.height() / 2)
         self.shortcuts()
+        self.settings: AHugeLie = AHugeLie(self)
         self.showNormal()
 
     def shortcut(self, keys: str, function) -> QShortcut:
@@ -43,8 +44,16 @@ class Application(QMainWindow):
         shortcut.activated.connect(function)
         return shortcut
 
+    def ctrl_r_shortcut(self):
+        if self.state is State.PracticeWithTime or self.state is State.Practice or self.state is State.PracticeNoTime:
+            self.chessgame.reset_game()
+        elif self.state is State.Started:
+            self.end_game_message('Resignation', 'Do you want to resign?', State.Resigned)
+
     def shortcuts(self):
-        self.shortcut('F11', lambda: (self.hide(), (self.showNormal() if self.isFullScreen() else (self.hide(), self.showFullScreen())))),
+        self.shortcut('F9', lambda: self.showNormal()),
+        self.shortcut('F10', lambda: self.showMaximized()),
+        self.shortcut('F11', lambda: self.showNormal() if self.isFullScreen() else (self.hide(), self.showFullScreen())),
         self.shortcut('Ctrl+E', lambda: self.close()),
         self.shortcut('Ctrl+M', lambda: self.return_to_menu()),
         self.shortcut('Ctrl+T', lambda: self.timer_control()),
@@ -52,7 +61,7 @@ class Application(QMainWindow):
         self.shortcut('-', lambda: self.chessgame.chessgui.audio_player.setVolume(self.chessgame.chessgui.audio_player.volume() - 10)),
         self.shortcut('Ctrl+-', lambda: self.chessgame.chessgui.audio_player.setVolume(0 if self.chessgame.chessgui.audio_player.volume() != 0 else 100)),
         self.shortcut('Ctrl+H', lambda: self.statusBar().hide() if self.statusBar().isVisible() else self.statusBar().show()),
-        self.shortcut('Ctrl+R', lambda: self.end_game_message('Resignation', 'Do you want to resign?', State.Resigned)),
+        self.shortcut('Ctrl+R', lambda: self.ctrl_r_shortcut()),
         self.shortcut('Ctrl+D', lambda: self.suggest_draw())
         self.shortcut('Ctrl+S', lambda: self.settings.hide() if self.settings.isVisible() else self.settings.show())
 
@@ -151,7 +160,7 @@ class Application(QMainWindow):
         self.resize_buttons()
         self.resize_background()
         self.set_status_bar()
-        self.settings.resizeEvent(QResizeEvent)
+        self.settings.manual_resize(self.width(), self.height())
 
     def resize_information(self):
         for key in self.information:
@@ -292,24 +301,87 @@ class Application(QMainWindow):
         self.hide_information()
 
 
-class Settings(QWidget):
+class AHugeLie(QWidget):
     def __init__(self, parent: Application):
-        super(Settings, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.parent: Application = parent
-        self.setWindowFlags(Qt.WindowStaysOnTopHint)
-        self.setMinimumSize(S*8, S*8)
-        self.move(int(self.parent.width() / 2-self.width() / 2), int(self.parent.height() / 2-self.height() / 2))
-        self.background = QLabel(self)
+        self.setFixedSize(self.parent.width(), self.parent.height())
+        self.background: QLabel = QLabel(self)
         self.background.resize(self.width(), self.height())
-        self.background.setPixmap(QPixmap(SETTINGS_BACKGROUND).scaled(self.width(), self.height()))
+        self.background.setStyleSheet("background-color: rgba(46, 46, 46, 220);")
+        self.settings: Settings = Settings(self)
+        self.settings.show()
         self.hide()
 
-    def resizeEvent(self, event) -> None:
-        self.move(int(self.parent.width() / 2-self.width() / 2), int(self.parent.height() / 2-self.height() / 2))
+    def manual_resize(self, width: int, height: int):
+        self.setFixedSize(width, height)
+        self.background.resize(width, height)
+        self.settings.move(int(self.width()/2-self.settings.width()/2), int(self.height()/2-self.settings.height()/2))
 
-    # pieces
-    # board
+
+class Settings(QWidget):
+    def __init__(self, parent: AHugeLie):
+        super().__init__(parent=parent)
+        self.parent: AHugeLie = parent
+        self.setMinimumSize(S*5, S*4)
+        self.move(int(self.parent.width() / 2-self.width() / 2), S+ int(self.parent.height() / 2-self.height() / 2))
+        self.hide()
+
+        self.create_main_label()
+        # self.checkbox: QCheckBox = self.create_checkbox()
+        self.combobox_pieces: QComboBox = self.create_combobox('Pieces: ', 'Assets/Images/Pieces/', 0)
+        self.combobox_pieces.currentTextChanged.connect(lambda: set_piece_style(self.combobox_pieces.currentText()))
+        self.combobox_pieces.setCurrentText('standardhd')
+        self.combobox_chessboard: QComboBox = self.create_combobox('Chessboard: ', 'Assets/Images/Chessboard/', self.combobox_pieces.height())
+        self.combobox_chessboard.currentTextChanged.connect(lambda: set_chessboard_style(self.combobox_chessboard.currentText()))
+        self.combobox_chessboard.setCurrentText('standard')
+
+    def create_main_label(self):
+        main: QLabel = QLabel(self)
+        main.setText('Settings')
+        main.setFont(QFont('Arial', FS*2))
+        main.setStyleSheet('color: white;')
+        main.show()
+        main.move(self.width()/2-main.width()/2, S/4)
+        message: QLabel = QLabel(self)
+        message.setText('[press Ctrl+S to close settings menu]')
+        message.setFont(QFont('Helvetica', 0.5*FS))
+        # font = message.font()
+        # message.setFont(font.setItalic(True))
+        message.setStyleSheet('color: white;')
+        message.show()
+        message.move(self.width() / 2 - message.width() / 2, main.height()+message.height())
+
+    def resizeEvent(self, event) -> None:
+        self.move(int(self.parent.width() / 2-self.width() / 2), S+int(self.parent.height() / 2-self.height() / 2))
+
+    def create_checkbox(self) -> QCheckBox:
+        checkbox: QCheckBox = QCheckBox(parent=self)
+        checkbox.setText('Show coordinates')
+        checkbox.setFont(QFont('Arial', FS))
+        checkbox.setStyleSheet('color: white;')
+        checkbox.setWindowFlag(Qt.WindowStaysOnTopHint)
+        checkbox.setLayoutDirection(Qt.RightToLeft)
+        checkbox.move(0, self.height()/2-checkbox.height()/2)
+        return checkbox
+
+    def create_combobox(self, description: str, directory: str, height_shift: int) -> QComboBox:
+        textlabel: QLabel = QLabel(self)
+        textlabel.setText(description)
+        textlabel.setFont(QFont('Arial', FS))
+        textlabel.setStyleSheet('color: white;')
+        textlabel.move(S/4, self.height() / 2 - textlabel.height() / 2 + height_shift)
+        combobox: QComboBox = QComboBox(parent=self)
+        combobox.setFont(QFont('Arial', 0.8*FS))
+        combobox.setStyleSheet('color: black;')
+        combobox.setWindowFlag(Qt.WindowStaysOnTopHint)
+        combobox.setFixedSize(QSize(S*2, combobox.height()))
+        combobox.move(self.width()-combobox.width()-0.25*S, self.height() / 2 - combobox.height() / 2 + height_shift)
+        for folder in listdir(directory):
+            combobox.addItem(folder)
+        return combobox
+
     # show/hide coordinates
     # show/hide additional button (same as for shortcuts)
-    # show/hide CHOOSE indicator
+    # show/hide position indicator
     # turn on/off sound in the application
