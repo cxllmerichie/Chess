@@ -27,9 +27,3 @@ class VoiceAssistant:
                 return
         except Exception as error:
             print(f'[ASSISTANT] Error. (orig: {error})')
-
-
-
-
-
-

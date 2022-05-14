@@ -1,4 +1,5 @@
 # CHESS GAME FEATURING
+# ToDo: highlight last move of the opponent
 # ToDo: AI algorithm
 # ToDo: voice assistant
 # ToDo: create and store log.db for singleplayer (and maybe practice/multiplayer)
@@ -6,6 +7,7 @@
 # ToDo: fix promotion
 # ToDo: fix draw, resign
 # ToDo: fix disconnect
+# SERVER & CLIENT
 # ToDo: self-calculating bytes amount for client and server
 # EXECUTABLE APPLICATION
 # ToDo: generate requirements

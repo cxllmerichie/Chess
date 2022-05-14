@@ -1,7 +1,7 @@
-from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut, QWidget
 from PyQt5.QtGui import QPixmap, QFont, QKeySequence, QResizeEvent, QIcon
-from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON
+from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON, S, SETTINGS_BACKGROUND
 from Common.Library import app_btn, app_label, color, Status, State, Text
 from ClientMultipalyer.ChessGame import ChessGame as MChessGame
 from ClientSingleplayer.ChessGame import ChessGame as SChessGame
@@ -27,9 +27,11 @@ class Application(QMainWindow):
         self.status: str = Status.Menu
 
         self.background: QLabel = self.create_background()
+        self.background.lower()
         self.menu_buttons: list = self.menu_btns()
         self.information: dict = self.information_labels()
         self.show_menu_buttons()
+        self.settings: Settings = Settings(self)
 
         self.setMinimumSize(self.chessgame.width(), self.chessgame.height())
         self.move(SW / 2 - self.width() / 2, SH / 2 - self.height() / 2)
@@ -42,16 +44,17 @@ class Application(QMainWindow):
         return shortcut
 
     def shortcuts(self):
-        self.shortcut('F11', (lambda: self.showNormal() if self.isFullScreen() else (self.hide(), self.showFullScreen()))),
+        self.shortcut('F11', lambda: (self.hide(), (self.showNormal() if self.isFullScreen() else (self.hide(), self.showFullScreen())))),
         self.shortcut('Ctrl+E', lambda: self.close()),
         self.shortcut('Ctrl+M', lambda: self.return_to_menu()),
         self.shortcut('Ctrl+T', lambda: self.timer_control()),
         self.shortcut('=', lambda: self.chessgame.chessgui.audio_player.setVolume(self.chessgame.chessgui.audio_player.volume() + 10)),
         self.shortcut('-', lambda: self.chessgame.chessgui.audio_player.setVolume(self.chessgame.chessgui.audio_player.volume() - 10)),
         self.shortcut('Ctrl+-', lambda: self.chessgame.chessgui.audio_player.setVolume(0 if self.chessgame.chessgui.audio_player.volume() != 0 else 100)),
-        self.shortcut('Ctrl+H', lambda: (self.statusBar().hide() if self.statusBar().isVisible() else self.statusBar().show())),
+        self.shortcut('Ctrl+H', lambda: self.statusBar().hide() if self.statusBar().isVisible() else self.statusBar().show()),
         self.shortcut('Ctrl+R', lambda: self.end_game_message('Resignation', 'Do you want to resign?', State.Resigned)),
         self.shortcut('Ctrl+D', lambda: self.suggest_draw())
+        self.shortcut('Ctrl+S', lambda: self.settings.hide() if self.settings.isVisible() else self.settings.show())
 
     def set_status_bar(self):
         self.statusBar().setFont(QFont('Cambria', int(FS / 2)))
@@ -82,7 +85,7 @@ class Application(QMainWindow):
             app_btn('Play vs Computer', (self.width() / 2 - BW / 2, self.height() / 2 - BH, BW, BH), lambda: None, self),
             app_btn('Play vs Player', (self.width() / 2 - BW / 2, self.height() / 2, BW, BH), lambda: self.gamemode_multiplayer(), self),
             app_btn('Practice', (self.width() / 2 - BW / 2, self.height() / 2 + BH, BW, BH), lambda: self.gamemode_practice(), self),
-            app_btn('Settings', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 2, BW, BH), lambda: None, self),
+            app_btn('Settings', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 2, BW, BH), lambda: self.settings.show(), self),
             app_btn('Exit', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 3, BW, BH), lambda: self.close(), self)
         ]
 
@@ -148,6 +151,7 @@ class Application(QMainWindow):
         self.resize_buttons()
         self.resize_background()
         self.set_status_bar()
+        self.settings.resizeEvent(QResizeEvent)
 
     def resize_information(self):
         for key in self.information:
@@ -286,3 +290,26 @@ class Application(QMainWindow):
             except Exception as exception:
                 print(f'[EXCEPTION] {self.state} Exception raised during synchronization.')
         self.hide_information()
+
+
+class Settings(QWidget):
+    def __init__(self, parent: Application):
+        super(Settings, self).__init__(parent=parent)
+        self.parent: Application = parent
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
+        self.setMinimumSize(S*8, S*8)
+        self.move(int(self.parent.width() / 2-self.width() / 2), int(self.parent.height() / 2-self.height() / 2))
+        self.background = QLabel(self)
+        self.background.resize(self.width(), self.height())
+        self.background.setPixmap(QPixmap(SETTINGS_BACKGROUND).scaled(self.width(), self.height()))
+        self.hide()
+
+    def resizeEvent(self, event) -> None:
+        self.move(int(self.parent.width() / 2-self.width() / 2), int(self.parent.height() / 2-self.height() / 2))
+
+    # pieces
+    # board
+    # show/hide coordinates
+    # show/hide additional button (same as for shortcuts)
+    # show/hide CHOOSE indicator
+    # turn on/off sound in the application

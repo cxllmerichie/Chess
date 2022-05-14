@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton
-from PyQt5.QtGui import QPixmap, QImage, QPalette, QBrush, QFont
+from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import Qt, QSize
 from datetime import datetime, timedelta
 from string import ascii_lowercase
-from Common.Constants import S, FS, IMAGE_PATH, SOUND_PATH
+from Common.Constants import S, FS, PIECE_PATH, INDICATOR_PATH, SOUND_PATH, CHESSBOARD_PATH
 from os import path, getcwd
 from enum import Enum
 import operator
@@ -23,7 +23,13 @@ def exist(coordinates: tuple, start: int = 0, end: int = 8) -> bool:
 
 
 def image(name: str) -> str:
-    return IMAGE_PATH + name + '.png'
+    if len(name) == 2:
+        if 'standardhd' in PIECE_PATH:
+            return PIECE_PATH + name + '.png'
+        return PIECE_PATH + name + '.svg'
+    if name == 'dark' or name == 'light':
+        return CHESSBOARD_PATH + name + '.svg'
+    return INDICATOR_PATH + name + '.svg'
 
 
 def sound(name: str) -> str:
@@ -73,23 +79,16 @@ def text_label(symbol: str, alignment, position: tuple, size: QSize, window: QWi
     return label
 
 
-def app_label(text: str, size: QSize, color: str, window: QWidget) -> QLabel:
+def app_label(text: str, size: QSize, _color: str, window: QWidget) -> QLabel:
     label: QLabel = QLabel(parent=window)
     label.setText(text)
     label.setFixedSize(size)
     label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
     label.setFont(QFont('Arial', FS*2))
-    label.setStyleSheet(f'color: {color}')
+    label.setStyleSheet(f'color: {_color}')
     label.move(0, 0)
     label.hide()
     return label
-
-
-def new_palette(img: str, width: int = S * 10, height: int = S * 10) -> QPalette:
-    img = QImage(IMAGE_PATH + img).scaled(QSize(width, height))
-    palette = QPalette()
-    palette.setBrush(QPalette.Window, QBrush(img))
-    return palette
 
 
 def game_btn(title: str, geometry: tuple, click, window: QWidget) -> QPushButton:
@@ -133,8 +132,8 @@ def str_time_to_float(_time: str) -> float:
     return float(_time[:2]) * 60 + float(_time[3:5]) + (float(milliseconds)/1000 if len(milliseconds) != 0 else 0)
 
 
-def convert(l: list) -> list:
-    return [(abs(7-l[0][0]), abs(7-l[0][1])), (abs(7-l[1][0]), abs(7-l[1][1]))]
+def convert(_list: list) -> list:
+    return [(abs(7 - _list[0][0]), abs(7 - _list[0][1])), (abs(7 - _list[1][0]), abs(7 - _list[1][1]))]
 
 
 class Status:
@@ -174,4 +173,10 @@ class Text:
     OpponentDisconnect = 'Opponent disconnected'
 
 
-color: dict = {'waiting': 'red', 'opporesign': 'green', 'selfresign': 'red', 'draw': 'gray', 'win': 'green', 'defeat': 'red', 'disconnect': 'gray'}
+color: dict = {'waiting': 'red',
+               'opporesign': 'green',
+               'selfresign': 'red',
+               'draw': 'gray',
+               'win': 'green',
+               'defeat': 'red',
+               'disconnect': 'gray'}
