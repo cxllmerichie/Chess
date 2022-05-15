@@ -3,10 +3,21 @@ from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import Qt, QSize
 from datetime import datetime, timedelta
 from string import ascii_lowercase
-from Common.Constants import S, FS, PIECE_PATH, INDICATOR_PATH, SOUND_PATH, CHESSBOARD_PATH
+from Common.Constants import S, FS, SOUND_PATH
 from os import path, getcwd
 from enum import Enum
 import operator
+
+CHESSBOARD_STYLE: str = 'standard'
+CHESSBOARD_PATH: str = f'Assets/Images/Chessboard/{CHESSBOARD_STYLE}/'
+# Standard: standard
+# Canonical: cardinal chessnut fresca icpieces kosal merida
+# Specific: fantasy pirouetti riohacha spatial
+# Strange but interesting: horsey letter shapes
+PIECE_STYLE: str = 'standardhd'
+PIECE_PATH: str = f'Assets/Images/Pieces/{PIECE_STYLE}/'
+INDICATOR_STYLE: str = 'standardhd'
+INDICATOR_PATH: str = f'Assets/Images/Indicators/{INDICATOR_STYLE}/'
 
 
 def operate(left: int, _operator: str, right: int):
@@ -22,9 +33,22 @@ def exist(coordinates: tuple, start: int = 0, end: int = 8) -> bool:
     return start <= coordinates[0] < end and start <= coordinates[1] < end
 
 
+def set_pieces(style: str):
+    global PIECE_STYLE, PIECE_PATH
+    PIECE_STYLE = style
+    PIECE_PATH = f'Assets/Images/Pieces/{PIECE_STYLE}/'
+
+
+def set_chessboard(style: str):
+    global CHESSBOARD_STYLE, CHESSBOARD_PATH
+    CHESSBOARD_STYLE = style
+    CHESSBOARD_PATH = f'Assets/Images/Chessboard/{CHESSBOARD_STYLE}/'
+
+
 def image(name: str) -> str:
+    global PIECE_PATH, CHESSBOARD_PATH, INDICATOR_PATH
     if len(name) == 2:
-        if 'standardhd' in PIECE_PATH:
+        if 'standard' in PIECE_PATH:
             return f'{PIECE_PATH}{name}.png'
         return f'{PIECE_PATH}{name}.svg'
     if name == 'dark' or name == 'light':

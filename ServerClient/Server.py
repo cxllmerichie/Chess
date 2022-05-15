@@ -1,6 +1,7 @@
 from socket import AF_INET, SOCK_STREAM, socket, error
 from threading import Thread, active_count
-from config import IP, PORT, ENCODING, DEFAULT, BYTES, CONNECTION_LIMIT, Message
+from config import ENCODING, DEFAULT, BYTES, CONNECTION_LIMIT, Message
+from ServerClient.Client import IP, PORT
 import random
 
 

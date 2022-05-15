@@ -1,5 +1,18 @@
 from socket import AF_INET, SOCK_STREAM, socket, error
-from ServerClient.config import IP, PORT, ENCODING, BYTES
+from ServerClient.config import ENCODING, BYTES
+
+IP: str = '127.0.0.1'
+PORT: int = 5555
+
+
+def set_ip(ip: str) -> None:
+    global IP
+    IP = ip
+
+
+def set_port(port: str) -> None:
+    global PORT
+    PORT = int(port)
 
 
 class Client:

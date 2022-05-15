@@ -1,5 +1,3 @@
-IP: str = '127.0.0.1'
-PORT: int = 5555
 ENCODING: str = 'utf-8'
 CONNECTION_LIMIT: int = 100
 BYTES: int = 1024

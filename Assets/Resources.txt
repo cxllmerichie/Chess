@@ -1,11 +1,19 @@
-Authors contribution:
-/Assets/Images/Chessboard
-/Assets/Images/Application/background.svg
-/Assets/Images/Indicators/standardhd
+List of resources, from which the Assets were taken:
 
-Images: (the rest)
-https://commons.wikimedia.org/
-https://github.com/
+    Authors contribution:
+        /Assets/Images/Chessboard
+        /Assets/Images/Application/background.svg
+        /Assets/Images/Indicators/standardhd
 
-Sound:
-https://www.chess.com/
+    Sound:
+        Files from /Assets/SoundEffects/ were taken from https://www.chess.com/
+        and later modified using FL Studio.
+
+    Images: (the rest)
+        icon:
+            (https://www.shutterstock.com/ru/image-vector/chess-icon-board-illustrations-1383815591)
+        wallpaper:
+            (https://www.goodfon.ru/wallpaper/zoloto-igra-shakhmaty-doska-pozolota-material-figury-partiia.html)
+        pieces:
+            (https://github.com/lichess-org/lila/tree/master/public/piece)
+            (https://commons.wikimedia.org/wiki/Category:SVG_chess_pieces)

@@ -155,11 +155,6 @@ class ChessGUI(QWidget):
         self.audio_player.setMedia(QMediaContent(QUrl.fromLocalFile(sound(action))))
         self.audio_player.play()
 
-    """# game log
-    def update_log(self) -> None:
-        self.turn += 1
-        self.log_file.write(f"{self.turn}. {self.chess.chessboard[x2][y2]} {self.chess.square_names[x1][y1]}->{self.chess.square_names[x2][y2]}\n")
-"""
     # END-GAME procedures
     def end_game_procedures(self) -> bool:
         if self.checkmate() or self.stalemate():

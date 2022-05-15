@@ -1,12 +1,12 @@
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut, QWidget, QCheckBox, QComboBox
-from PyQt5.QtGui import QPixmap, QFont, QKeySequence, QResizeEvent, QIcon
-from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON, S, set_piece_style, set_chessboard_style, FRAMERATE
-from Common.Library import app_btn, app_label, color, Hint, GameState, StateText, ScreenState
+from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut, QWidget, QCheckBox, QComboBox, QLineEdit, QPushButton
+from PyQt5.QtGui import QPixmap, QFont, QKeySequence, QResizeEvent, QIcon, QIntValidator
+from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON, S, FRAMERATE
+from Common.Library import app_btn, app_label, color, Hint, GameState, StateText, ScreenState, set_pieces, set_chessboard
 from ClientMultipalyer.ChessGame import ChessGame as MChessGame
 from ClientSingleplayer.ChessGame import ChessGame as SChessGame
 from ServerClient.config import Message
-from ServerClient.Client import Client
+from ServerClient.Client import Client, set_ip, set_port
 from _thread import start_new_thread
 from contextlib import redirect_stdout
 with redirect_stdout(None):
@@ -54,7 +54,7 @@ class Application(QMainWindow):
         self.background.setPixmap(QPixmap(self.wallpaper).scaled(self.width(), self.height()))
         self.background.resize(self.width(), self.height())
 
-    # shortcuts
+    # SHORTCUTS
     def shortcut(self, keys: str, function) -> QShortcut:
         shortcut: QShortcut = QShortcut(QKeySequence(keys), self)
         shortcut.activated.connect(function)
@@ -73,7 +73,14 @@ class Application(QMainWindow):
         self.shortcut('Ctrl+H', lambda: self.statusBar().hide() if self.statusBar().isVisible() else self.statusBar().show()),
         self.shortcut('Ctrl+R', lambda: self.ctrl_r()),
         self.shortcut('Ctrl+D', lambda: self.suggest_draw())
-        self.shortcut('Ctrl+S', lambda: self.settings.hide() if self.settings.isVisible() else self.settings.show())
+        self.shortcut('Ctrl+S', lambda: self.ctrl_s())
+
+    def ctrl_s(self):
+        if self.settings.isVisible():
+            self.settings.settings.save()
+            self.settings.hide()
+        else:
+            self.settings.show()
 
     def f9(self) -> None:
         self.showNormal()
@@ -142,6 +149,7 @@ class Application(QMainWindow):
 
     # MENU
     def return_to_menu_procedure(self) -> None:
+        self.settings.hide()
         self.hide_information()
         self.change_status_bar(Hint.Menu)
         self.hide_information()
@@ -201,7 +209,7 @@ class Application(QMainWindow):
         self.chessgame.show()
         self.change_status_bar(Hint.Multiplayer)
         start_new_thread(self.connect_to_server, (client, ))
-        # Это просто пиздец а не костыль (строка 199 + строка 205): из-за того что подключение к серверу
+        # Это просто п****ц а не костыль (строка 199 + строка 205): из-за того что подключение к серверу
         # вызвано в другом треде, при ручном вызове функции ресайза инфо-лейблов в треде с подключением,
         # фреймворк жалуется на то что родитель в другом треде,
         # но если заресайpить окно так как это обычно происходит после вызова этого треда сразу же,
@@ -343,7 +351,7 @@ class TransparentScreen(QWidget):
     def create_background(self) -> QLabel:
         background: QLabel = QLabel(self)
         background.resize(self.width(), self.height())
-        background.setStyleSheet("background-color: rgba(46, 46, 46, 220);")
+        background.setStyleSheet('background-color: rgba(46, 46, 46, 220);')
         return background
 
     def resizeEvent(self, event) -> None:
@@ -362,12 +370,44 @@ class Settings(QWidget):
         self.create_main_label()
         # self.checkbox: QCheckBox = self.create_checkbox()
         self.combobox_pieces: QComboBox = self.create_combobox('Pieces: ', 'Assets/Images/Pieces/', 0)
-        self.combobox_pieces.currentTextChanged.connect(lambda: set_piece_style(self.combobox_pieces.currentText()))
-        self.combobox_pieces.setCurrentText('standardhd')
+        self.combobox_pieces.setCurrentText('standard')
 
         self.combobox_chessboard: QComboBox = self.create_combobox('Chessboard: ', 'Assets/Images/Chessboard/', self.combobox_pieces.height())
-        self.combobox_chessboard.currentTextChanged.connect(lambda: set_chessboard_style(self.combobox_chessboard.currentText()))
         self.combobox_chessboard.setCurrentText('standard')
+
+        self.textbox_ip: QLineEdit = self.create_textbox('Server IP:', '127.0.0.1', self.combobox_chessboard.height()*2)
+        self.textbox_ip.setInputMask('000.000.000.000')
+
+        self.textbox_port: QLineEdit = self.create_textbox('Server PORT:', '5555', self.textbox_ip.height()*3)
+        self.textbox_port.setValidator(QIntValidator())
+
+        self.button_save: QPushButton = self.create_button_save('Save', 0, S/2, FS, True, lambda: (self.save(), self.parent.hide()))
+        self.button_reset: QPushButton = self.create_button_save('Reset', self.button_save.height(), S/4, FS/2, False, lambda: self.reset())
+
+    def create_button_save(self, text: str, height_shift: int, h: int, fs: int, is_border: bool, function) -> QPushButton:
+        button: QPushButton = QPushButton(self)
+        button.setText(text)
+        button.setStyleSheet('background-color: transparent; color: white;')
+        if is_border:
+            button.setStyleSheet('background-color: transparent; border: 1px solid gray; color: white;')
+        button.setFont(QFont('Arial', fs))
+        button.setFixedSize(S*4.5, h)
+        button.move(self.width()/2-button.width()/2, S*4+height_shift)
+        button.clicked.connect(function)
+        return button
+
+    def save(self):
+        set_pieces(self.combobox_pieces.currentText())
+        set_chessboard(self.combobox_chessboard.currentText())
+        set_ip(self.textbox_ip.text())
+        set_port(self.textbox_port.text())
+
+    def reset(self):
+        self.combobox_pieces.setCurrentText('standard')
+        self.combobox_chessboard.setCurrentText('standard')
+        self.textbox_ip.setText('127.0.0.1')
+        self.textbox_port.setText('5555')
+        self.save()
 
     def create_main_label(self) -> None:
         main: QLabel = QLabel(self)
@@ -406,13 +446,27 @@ class Settings(QWidget):
         textlabel.move(S/4, self.height() / 2 - textlabel.height() / 2 + height_shift)
         combobox: QComboBox = QComboBox(parent=self)
         combobox.setFont(QFont('Arial', 0.8*FS))
-        combobox.setStyleSheet('color: black;')
+        combobox.setStyleSheet('color: black; background-color: white; border: 1px solid gray;')
         combobox.setWindowFlag(Qt.WindowStaysOnTopHint)
-        combobox.setFixedSize(QSize(S*2, combobox.height()))
+        combobox.setFixedSize(QSize(S*2.25, combobox.height()))
         combobox.move(self.width()-combobox.width()-0.25*S, self.height() / 2 - combobox.height() / 2 + height_shift)
         for folder in listdir(directory):
             combobox.addItem(folder)
         return combobox
+
+    def create_textbox(self, description: str, default: str, height_shift: int) -> QLineEdit:
+        textlabel: QLabel = QLabel(self)
+        textlabel.setText(description)
+        textlabel.setFont(QFont('Arial', FS))
+        textlabel.setStyleSheet('color: white;')
+        textlabel.move(S / 4, self.height() / 2 - textlabel.height() / 2 + height_shift)
+        textbox: QLineEdit = QLineEdit(self)
+        textbox.setStyleSheet('background-color: white; border: 1px solid gray;')
+        textbox.setFont(QFont('Arial', 0.7*FS))
+        textbox.setText(default)
+        textbox.setFixedSize(QSize(S*2.25, textbox.height()))
+        textbox.move(self.width()-textbox.width()-0.25*S, self.height() / 2 - textbox.height() / 2 + height_shift)
+        return textbox
 
     # show/hide coordinates
     # show/hide additional button (same as for shortcuts)
