@@ -383,6 +383,7 @@ class Settings(QWidget):
 
         self.button_save: QPushButton = self.create_button_save('Save', 0, S/2, FS, True, lambda: (self.save(), self.parent.hide()))
         self.button_reset: QPushButton = self.create_button_save('Reset', self.button_save.height(), S/4, FS/2, False, lambda: self.reset())
+        self.save()
 
     def create_button_save(self, text: str, height_shift: int, h: int, fs: int, is_border: bool, function) -> QPushButton:
         button: QPushButton = QPushButton(self)
@@ -438,12 +439,16 @@ class Settings(QWidget):
         checkbox.move(0, self.height()/2-checkbox.height()/2)
         return checkbox
 
-    def create_combobox(self, description: str, directory: str, height_shift: int) -> QComboBox:
+    def create_nearlabel(self, description: str, height_shift: int) -> QLabel:
         textlabel: QLabel = QLabel(self)
         textlabel.setText(description)
         textlabel.setFont(QFont('Arial', FS))
         textlabel.setStyleSheet('color: white;')
-        textlabel.move(S/4, self.height() / 2 - textlabel.height() / 2 + height_shift)
+        textlabel.move(S / 4, self.height() / 2 - textlabel.height() / 2 + height_shift)
+        return textlabel
+
+    def create_combobox(self, description: str, directory: str, height_shift: int) -> QComboBox:
+        self.create_nearlabel(description, height_shift)
         combobox: QComboBox = QComboBox(parent=self)
         combobox.setFont(QFont('Arial', 0.8*FS))
         combobox.setStyleSheet('color: black; background-color: white; border: 1px solid gray;')
@@ -455,11 +460,7 @@ class Settings(QWidget):
         return combobox
 
     def create_textbox(self, description: str, default: str, height_shift: int) -> QLineEdit:
-        textlabel: QLabel = QLabel(self)
-        textlabel.setText(description)
-        textlabel.setFont(QFont('Arial', FS))
-        textlabel.setStyleSheet('color: white;')
-        textlabel.move(S / 4, self.height() / 2 - textlabel.height() / 2 + height_shift)
+        self.create_nearlabel(description, height_shift)
         textbox: QLineEdit = QLineEdit(self)
         textbox.setStyleSheet('background-color: white; border: 1px solid gray;')
         textbox.setFont(QFont('Arial', 0.7*FS))
