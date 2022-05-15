@@ -38,7 +38,7 @@ class Server:
                 else:
                     try:
                         self.data[pair_id][player_id] = data + self.data[pair_id][player_id][10:13] + 'R'
-                    except (IndexError, TypeError):
+                    except Exception as exception:
                         pass  # opponent resigned or it is a draw
                     reply = self.data[pair_id][0] if player_id == 1 else self.data[pair_id][1]
                     # print(f'Received (#{player}): {data}')

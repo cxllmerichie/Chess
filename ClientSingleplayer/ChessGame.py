@@ -1,15 +1,16 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QMessageBox
 from PyQt5.QtCore import QSize, Qt
 from Common.Library import game_btn, str_time_to_float, text_label
-from Common.Constants import TICK_PERIOD, GAME_TIME, S, TIME_FORMAT
+from Common.Constants import GAME_TIME, S, TIME_FORMAT, FRAMERATE
 from string import ascii_uppercase
 from ClientSingleplayer.ChessGUI import ChessGUI
 from threading import Thread
-from time import sleep
+from contextlib import redirect_stdout
+with redirect_stdout(None):
+    from pygame.time import Clock
 
 
 class ChessGame(QWidget):
-    # def __init__(self, parent_window: QWidget, log_file):
     def __init__(self, parent_window: QWidget):
         super(ChessGame, self).__init__(parent=parent_window)
         self.setWindowFlag(Qt.FramelessWindowHint)
@@ -17,11 +18,10 @@ class ChessGame(QWidget):
 
         self.text_labels()
         self.buttons()
-
+        self.clock: Clock = Clock()
         self.timers: dict = {'w': Timer(text_label(GAME_TIME, Qt.AlignHCenter | Qt.AlignBottom, (S * 4, S * 9), QSize(S * 2, S), self)),
                              'b': Timer(text_label(GAME_TIME, Qt.AlignHCenter | Qt.AlignTop, (S * 4, 0), QSize(S * 2, S), self))}
 
-        # self.chessgui = ChessGUI(self, log_file)
         self.chessgui = ChessGUI(self)
         self.chessgui.installEventFilter(self.chessgui)
         self.hide()
@@ -44,7 +44,6 @@ class ChessGame(QWidget):
 
     def reset_game(self):
         self.chessgui.enable_mouse_click = False
-        sleep(0.5)
         self.timers['w'].time = '10:00.00'
         self.timers['b'].time = '10:00.00'
         self.timers['w'].label.setText(self.timers['w'].time)
@@ -69,7 +68,7 @@ class ChessGame(QWidget):
             else:
                 self.timers['w'].pause()
                 self.timers['b'].resume()
-            sleep(TICK_PERIOD / 2)
+            self.clock.tick(FRAMERATE)
         self.end_game()
 
     def text_labels(self):
@@ -112,6 +111,7 @@ class Timer:
         self.time: str = label.text()
         self.status: bool = False
         self.thread: Thread = Thread(target=lambda: self.countdown(amount=str_time_to_float(self.time)))
+        self.clock: Clock = Clock()
 
     def is_visible(self) -> bool:
         return self.label.isVisible()
@@ -121,8 +121,8 @@ class Timer:
             minutes, seconds_milliseconds = divmod(amount, 60)
             seconds, milliseconds = divmod(seconds_milliseconds, 1)
             self.label.setText('{:02.0f}:{:02.0f}.{:02.0f}'.format(minutes, seconds, milliseconds * 1000)[:TIME_FORMAT])
-            sleep(TICK_PERIOD)
-            amount -= TICK_PERIOD
+            self.clock.tick(100)
+            amount -= 0.01
             if amount <= 0:
                 self.label.setText('00:00.00')
                 self.time = '00:00.00'

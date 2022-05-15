@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut, QWidget, QCheckBox, QComboBox
 from PyQt5.QtGui import QPixmap, QFont, QKeySequence, QResizeEvent, QIcon
-from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON, S, set_piece_style, set_chessboard_style
+from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON, S, set_piece_style, set_chessboard_style, FRAMERATE
 from Common.Library import app_btn, app_label, color, Status, State, Text
 from ClientMultipalyer.ChessGame import ChessGame as MChessGame
 from ClientSingleplayer.ChessGame import ChessGame as SChessGame
@@ -228,9 +228,9 @@ class Application(QMainWindow):
         self.chessgame.start_game()
 
     def connect_to_server(self, client: Client):
-        fps: Clock = Clock()
+        clock: Clock = Clock()
         while self.state is not State.Finished:
-            fps.tick(200)
+            clock.tick(FRAMERATE)
             # STATE control
             if self.state is State.Resigned:
                 client.send(RESIGN)

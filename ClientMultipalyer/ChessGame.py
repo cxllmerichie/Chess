@@ -1,11 +1,13 @@
 from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import QSize, Qt
 from Common.Library import str_time_to_float, text_label
-from Common.Constants import TICK_PERIOD, GAME_TIME, S, TIME_FORMAT
+from Common.Constants import GAME_TIME, S, TIME_FORMAT, FRAMERATE
 from string import ascii_uppercase
 from ClientMultipalyer.ChessGUI import ChessGUI
 from threading import Thread
-from time import sleep
+from contextlib import redirect_stdout
+with redirect_stdout(None):
+    from pygame.time import Clock
 
 
 class ChessGame(QWidget):
@@ -16,6 +18,7 @@ class ChessGame(QWidget):
         self.color: str = color
         self.highlighters: dict = self.create_highlighters()
         self.text_labels()
+        self.clock: Clock = Clock()
         self.timers: dict = self.create_timers()
         self.chessgui: ChessGUI = ChessGUI(self, self.color)
         self.chessgui.installEventFilter(self.chessgui)
@@ -66,7 +69,7 @@ class ChessGame(QWidget):
                 self.highlighters['w'].hide()
                 self.timers['w'].resume()
                 self.highlighters['b'].show()
-            sleep(TICK_PERIOD / 2)
+            self.clock.tick(FRAMERATE)
         self.end_game()
 
     def text_labels(self):
@@ -90,14 +93,15 @@ class Timer:
         self.time: str = label.text()
         self.status: bool = False
         self.thread: Thread = Thread(target=lambda: self.countdown(amount=str_time_to_float(self.time)))
+        self.clock: Clock = Clock()
 
     def countdown(self, amount: float = 600) -> None:
         while amount > 0 and self.status:
             minutes, seconds_milliseconds = divmod(amount, 60)
             seconds, milliseconds = divmod(seconds_milliseconds, 1)
             self.label.setText('{:02.0f}:{:02.0f}.{:02.0f}'.format(minutes, seconds, milliseconds * 1000)[:TIME_FORMAT])
-            sleep(TICK_PERIOD)
-            amount -= TICK_PERIOD
+            self.clock.tick(100)
+            amount -= 0.01
             if amount <= 0:
                 self.label.setText('00:00.00')
                 self.time = '00:00.00'
