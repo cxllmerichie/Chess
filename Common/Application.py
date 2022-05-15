@@ -2,10 +2,10 @@ from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut, QWidget, QCheckBox, QComboBox
 from PyQt5.QtGui import QPixmap, QFont, QKeySequence, QResizeEvent, QIcon
 from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON, S, set_piece_style, set_chessboard_style, FRAMERATE
-from Common.Library import app_btn, app_label, color, Status, State, Text
+from Common.Library import app_btn, app_label, color, Hint, GameState, StateText, ScreenState
 from ClientMultipalyer.ChessGame import ChessGame as MChessGame
 from ClientSingleplayer.ChessGame import ChessGame as SChessGame
-from ServerClient.config import DISCONNECT, RESIGN, SUGGESTDRAW, ACCEPTEDDRAW
+from ServerClient.config import Message
 from ServerClient.Client import Client
 from _thread import start_new_thread
 from contextlib import redirect_stdout
@@ -23,37 +23,47 @@ class Application(QMainWindow):
         self.setWindowIcon(QIcon(ICON))
 
         self.chessgame = SChessGame(self)
-        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
-        self.state: State = State.NoState
-        self.status: str = Status.Menu
+        self.state: GameState = GameState.NoState
+        self.hint: str = Hint.Menu
 
         self.background: QLabel = self.create_background()
-        self.background.lower()
-        self.menu_buttons: list = self.menu_btns()
-        self.information: dict = self.information_labels()
+        self.menu_buttons: list = self.create_menu_buttons()
+        self.information: dict = self.create_information()
         self.show_menu_buttons()
 
         self.setMinimumSize(S*10, S*10)
         self.move(SW / 2 - self.width() / 2, SH / 2 - self.height() / 2)
         self.shortcuts()
-        self.settings: AHugeLie = AHugeLie(self)
+        self.settings: TransparentScreen = TransparentScreen(self)
         self.showNormal()
+        self.last_screen_state: ScreenState = ScreenState.Normal
 
+    # BACKGROUND
+    def create_background(self) -> QLabel:
+        background = QLabel(self)
+        background.resize(self.width(), self.height())
+        background.setPixmap(QPixmap(self.wallpaper).scaled(self.width(), self.height()))
+        background.lower()
+        return background
+
+    def change_background(self, background: str) -> None:
+        self.wallpaper = background
+        self.resize_background()
+
+    def resize_background(self) -> None:
+        self.background.setPixmap(QPixmap(self.wallpaper).scaled(self.width(), self.height()))
+        self.background.resize(self.width(), self.height())
+
+    # shortcuts
     def shortcut(self, keys: str, function) -> QShortcut:
         shortcut: QShortcut = QShortcut(QKeySequence(keys), self)
         shortcut.activated.connect(function)
         return shortcut
 
-    def ctrl_r_shortcut(self):
-        if self.state is State.PracticeWithTime or self.state is State.Practice or self.state is State.PracticeNoTime:
-            self.chessgame.reset_game()
-        elif self.state is State.Started:
-            self.end_game_message('Resignation', 'Do you want to resign?', State.Resigned)
-
-    def shortcuts(self):
-        self.shortcut('F9', lambda: self.showNormal()),
-        self.shortcut('F10', lambda: self.showMaximized()),
-        self.shortcut('F11', lambda: self.showNormal() if self.isFullScreen() else (self.hide(), self.showFullScreen())),
+    def shortcuts(self) -> None:
+        self.shortcut('F9', lambda: self.f9()),
+        self.shortcut('F10', lambda: self.f10()),
+        self.shortcut('F11', lambda: self.f11()),
         self.shortcut('Ctrl+E', lambda: self.close()),
         self.shortcut('Ctrl+M', lambda: self.return_to_menu()),
         self.shortcut('Ctrl+T', lambda: self.timer_control()),
@@ -61,35 +71,93 @@ class Application(QMainWindow):
         self.shortcut('-', lambda: self.chessgame.chessgui.audio_player.setVolume(self.chessgame.chessgui.audio_player.volume() - 10)),
         self.shortcut('Ctrl+-', lambda: self.chessgame.chessgui.audio_player.setVolume(0 if self.chessgame.chessgui.audio_player.volume() != 0 else 100)),
         self.shortcut('Ctrl+H', lambda: self.statusBar().hide() if self.statusBar().isVisible() else self.statusBar().show()),
-        self.shortcut('Ctrl+R', lambda: self.ctrl_r_shortcut()),
+        self.shortcut('Ctrl+R', lambda: self.ctrl_r()),
         self.shortcut('Ctrl+D', lambda: self.suggest_draw())
         self.shortcut('Ctrl+S', lambda: self.settings.hide() if self.settings.isVisible() else self.settings.show())
 
-    def set_status_bar(self):
+    def f9(self) -> None:
+        self.showNormal()
+        self.last_screen_state = ScreenState.Normal
+
+    def f10(self) -> None:
+        self.showMaximized()
+        self.last_screen_state = ScreenState.Maximized
+
+    def f11(self) -> None:
+        if not self.isFullScreen():
+            self.hide()
+            self.showFullScreen()
+            return None
+        if self.last_screen_state is ScreenState.Normal:
+            self.showNormal()
+            return None
+        if self.last_screen_state is ScreenState.Maximized:
+            self.showMaximized()
+            self.last_screen_state = ScreenState.Maximized
+
+    def ctrl_r(self) -> None:
+        if self.state is GameState.PracticeWithTime or self.state is GameState.PracticeNoTime:
+            self.chessgame.reset_game()
+        elif self.state is GameState.Started:
+            self.end_game_message('Resignation', 'Do you want to resign?', GameState.Resigned)
+
+    # STATUS BAR (HINT)
+    def change_status_bar(self, status: str) -> None:
+        self.hint = status
+        self.resizeEvent(QResizeEvent)
+
+    def set_status_bar(self) -> None:
         self.statusBar().setFont(QFont('Cambria', int(FS / 2)))
         self.statusBar().setStyleSheet('color: white')
-        self.statusBar().showMessage(self.status)
+        self.statusBar().showMessage(self.hint)
 
-    def information_labels(self) -> dict:
+    # INFORMATION LABELS
+    def create_information(self) -> dict:
         return {
-            'waiting': app_label(Text.Waiting, QSize(self.width(), self.height()), color['waiting'], self),
-            'opporesign': app_label(Text.OpponentResign, QSize(self.width(), self.height()), color['opporesign'], self),
-            'selfresign': app_label(Text.SelfResign, QSize(self.width(), self.height()), color['selfresign'], self),
-            'draw': app_label(Text.Draw, QSize(self.width(), self.height()), color['draw'], self),
-            'disconnect': app_label(Text.OpponentDisconnect, QSize(self.width(), self.height()), color['disconnect'], self),
-            'win': app_label(Text.Win, QSize(self.width(), self.height()), color['win'], self),
-            'defeat': app_label(Text.Defeat, QSize(self.width(), self.height()), color['defeat'], self)
+            'waiting': app_label(StateText.Waiting, QSize(self.width(), self.height()), color['waiting'], self),
+            'opporesign': app_label(StateText.OppoResign, QSize(self.width(), self.height()), color['opporesign'], self),
+            'selfresign': app_label(StateText.SelfResign, QSize(self.width(), self.height()), color['selfresign'], self),
+            'draw': app_label(StateText.Draw, QSize(self.width(), self.height()), color['draw'], self),
+            'disconnect': app_label(StateText.OppoDisconnect, QSize(self.width(), self.height()), color['disconnect'], self),
+            'win': app_label(StateText.Win, QSize(self.width(), self.height()), color['win'], self),
+            'defeat': app_label(StateText.Defeat, QSize(self.width(), self.height()), color['defeat'], self)
         }
 
-    def show_information(self):
+    def resize_information(self) -> None:
+        for key in self.information:
+            was_visible: bool = self.information[key].isVisible()
+            previous_text: str = self.information[key].text()
+            self.information[key].hide()
+            self.information[key] = app_label(previous_text, QSize(self.width(), self.height()), color[key], self)
+            if was_visible:
+                self.information[key].show()
+
+    def show_information(self) -> None:
         for key in self.information:
             self.information[key].show()
 
-    def hide_information(self):
+    def hide_information(self) -> None:
         for key in self.information:
             self.information[key].hide()
 
-    def menu_btns(self) -> list:
+    # MENU
+    def return_to_menu_procedure(self) -> None:
+        self.hide_information()
+        self.change_status_bar(Hint.Menu)
+        self.hide_information()
+        self.state = GameState.SelfDisconnected
+        self.chessgame.close()
+        self.change_background(MENU_BACKGROUND)
+        self.statusBar().show()
+        self.show_menu_buttons()
+
+    def return_to_menu(self) -> None:
+        if self.wallpaper != MENU_BACKGROUND:
+            if self.message_box_reply('Menu', 'Return to menu?') == QMessageBox.Yes:
+                self.return_to_menu_procedure()
+
+    # MENU BUTTONS
+    def create_menu_buttons(self) -> list:
         return [
             app_btn('Play vs Computer', (self.width() / 2 - BW / 2, self.height() / 2 - BH, BW, BH), lambda: None, self),
             app_btn('Play vs Player', (self.width() / 2 - BW / 2, self.height() / 2, BW, BH), lambda: self.gamemode_multiplayer(), self),
@@ -98,51 +166,47 @@ class Application(QMainWindow):
             app_btn('Exit', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 3, BW, BH), lambda: self.close(), self)
         ]
 
-    def hide_menu_buttons(self):
+    def resize_menu_buttons(self) -> None:
+        self.menu_buttons[0].move(self.width() / 2 - BW / 2, self.height() / 2 - BH)
+        self.menu_buttons[1].move(self.width() / 2 - BW / 2, self.height() / 2)
+        self.menu_buttons[2].move(self.width() / 2 - BW / 2, self.height() / 2 + BH)
+        self.menu_buttons[3].move(self.width() / 2 - BW / 2, self.height() / 2 + BH * 2)
+        self.menu_buttons[4].move(self.width() / 2 - BW / 2, self.height() / 2 + BH * 3)
+
+    def hide_menu_buttons(self) -> None:
         for button in self.menu_buttons:
             button.hide()
 
-    def show_menu_buttons(self):
+    def show_menu_buttons(self) -> None:
         for button in self.menu_buttons:
             button.show()
 
-    def suggest_draw(self):
-        self.state = State.SuggestedDraw
+    # GAMEMODES
+    def gamemode_practice(self) -> None:
+        self.change_status_bar(Hint.Practice)
+        self.state = GameState.PracticeWithTime
+        self.hide_menu_buttons()
+        self.change_background(GAME_BACKGROUND)
+        self.chessgame = SChessGame(self)
+        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
+        self.chessgame.show()
+        self.chessgame.start_game()
 
-    def timer_control(self):
-        if self.state is State.PracticeWithTime:
-            self.chessgame.disable_timers()
-            self.state = State.PracticeNoTime
-        elif self.state is State.PracticeNoTime:
-            self.chessgame.enable_timers()
-            self.state = State.PracticeWithTime
-
-    def return_to_menu_procedure(self):
-        self.hide_information()
-        self.change_status_bar(Status.Menu)
-        self.hide_information()
-        self.state = State.SelfDisconnected
-        self.chessgame.close()
-        self.change_background(MENU_BACKGROUND)
-        self.statusBar().show()
-        self.show_menu_buttons()
-
-    def change_background(self, background: str):
-        self.wallpaper = background
-        self.resize_background()
-
-    def return_to_menu(self):
-        if self.wallpaper != MENU_BACKGROUND:
-            if self.message_box_reply('Menu', 'Return to menu?') == QMessageBox.Yes:
-                self.return_to_menu_procedure()
-
-    def message_box_reply(self, title: str, question: str):
-        return QMessageBox().question(self, title, question, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
-    def end_game_message(self, title: str, question: str, state: State):
-        if self.message_box_reply(title, question) == QMessageBox.Yes:
-            self.state = state
-            self.chessgame.end_game()
+    def gamemode_multiplayer(self) -> None:
+        client: Client = Client()
+        self.state = GameState.Waiting
+        self.show_waiting_screen()
+        self.chessgame = MChessGame(self, client.receive()[11])
+        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
+        self.chessgame.show()
+        self.change_status_bar(Hint.Multiplayer)
+        start_new_thread(self.connect_to_server, (client, ))
+        # Это просто пиздец а не костыль (строка 199 + строка 205): из-за того что подключение к серверу
+        # вызвано в другом треде, при ручном вызове функции ресайза инфо-лейблов в треде с подключением,
+        # фреймворк жалуется на то что родитель в другом треде,
+        # но если заресайpить окно так как это обычно происходит после вызова этого треда сразу же,
+        # он как-то идентифицирует тред и показывает инфо лейб корректно без доп. ресайза после
+        self.resizeEvent(QResizeEvent)
 
     # @DECORATOR
     def closeEvent(self, event):
@@ -154,189 +218,158 @@ class Application(QMainWindow):
 
     # @DECORATOR
     def resizeEvent(self, event):
-        self.resize_buttons()
+        self.resize_menu_buttons()
         self.resize_information()
         self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
-        self.resize_buttons()
+        self.resize_menu_buttons()
         self.resize_background()
         self.set_status_bar()
-        self.settings.manual_resize(self.width(), self.height())
+        self.settings.resizeEvent(QResizeEvent)
 
-    def resize_information(self):
-        for key in self.information:
-            was_visible: bool = self.information[key].isVisible()
-            previous_text: str = self.information[key].text()
-            self.information[key].hide()
-            self.information[key] = app_label(previous_text, QSize(self.width(), self.height()), color[key], self)
-            if was_visible:
-                self.information[key].show()
+    # PRACTICE PROCEDURES
+    def timer_control(self) -> None:
+        if self.state is GameState.PracticeWithTime:
+            self.chessgame.disable_timers()
+            self.state = GameState.PracticeNoTime
+        elif self.state is GameState.PracticeNoTime:
+            self.chessgame.enable_timers()
+            self.state = GameState.PracticeWithTime
 
-    def resize_background(self):
-        self.background.setPixmap(QPixmap(self.wallpaper).scaled(self.width(), self.height()))
-        self.background.resize(self.width(), self.height())
+    # MULTIPLAYER PROCEDURES
+    def suggest_draw(self) -> None:
+        self.state = GameState.SuggestedDraw
 
-    def resize_buttons(self):
-        self.menu_buttons[0].move(self.width() / 2 - BW / 2, self.height() / 2 - BH)
-        self.menu_buttons[1].move(self.width() / 2 - BW / 2, self.height() / 2)
-        self.menu_buttons[2].move(self.width() / 2 - BW / 2, self.height() / 2 + BH)
-        self.menu_buttons[3].move(self.width() / 2 - BW / 2, self.height() / 2 + BH * 2)
-        self.menu_buttons[4].move(self.width() / 2 - BW / 2, self.height() / 2 + BH * 3)
-
-    def create_background(self) -> QLabel:
-        background = QLabel(self)
-        background.resize(self.width(), self.height())
-        background.setPixmap(QPixmap(self.wallpaper).scaled(self.width(), self.height()))
-        return background
-
-    def change_status_bar(self, status: str):
-        self.status = status
-        self.resizeEvent(QResizeEvent)
-
-    def gamemode_practice(self):
-        self.change_status_bar(Status.Practice)
-        self.state = State.PracticeWithTime
-        self.hide_menu_buttons()
-        self.change_background(GAME_BACKGROUND)
-        self.chessgame = SChessGame(self)
-        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
-        self.chessgame.show()
-        self.chessgame.start_game()
-
-    def gamemode_multiplayer(self):
-        client: Client = Client()
-        self.state = State.Waiting
-        self.show_waiting_screen()
-        self.chessgame = MChessGame(self, client.receive()[11])
-        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
-        self.chessgame.show()
-        self.change_status_bar(Status.Multiplayer)
-        start_new_thread(self.connect_to_server, (client, ))
-        # Это просто пиздец а не костыль (строка 199 + строка 205): из-за того что подключение к серверу
-        # вызвано в другом треде, при ручном вызове функции ресайза инфо-лейблов в треде с подключением,
-        # фреймворк жалуется на то что родитель в другом треде,
-        # но если заресайpить окно так как это обычно происходит после вызова этого треда сразу же,
-        # он как-то идентифицирует тред и показывает инфо лейб корректно без доп. ресайза после
-        self.resizeEvent(QResizeEvent)
-
-    def show_waiting_screen(self):
+    def show_waiting_screen(self) -> None:
         self.hide_menu_buttons()
         self.change_background(GAME_BACKGROUND)
         self.information['waiting'].show()
 
-    def start_multiplayer_game(self):
+    def start_multiplayer_game(self) -> None:
         self.information['waiting'].hide()
         self.chessgame.start_game()
 
-    def connect_to_server(self, client: Client):
+    def message_box_reply(self, title: str, question: str):
+        return QMessageBox().question(self, title, question, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+    def end_game_message(self, title: str, question: str, state: GameState) -> None:
+        if self.message_box_reply(title, question) == QMessageBox.Yes:
+            self.state = state
+            self.chessgame.end_game()
+
+    def connect_to_server(self, client: Client) -> None:
         clock: Clock = Clock()
-        while self.state is not State.Finished:
+        while self.state is not GameState.Finished:
             clock.tick(FRAMERATE)
             # STATE control
-            if self.state is State.Resigned:
-                client.send(RESIGN)
+            if self.state is GameState.Resigned:
+                client.send(Message.RESIGN)
                 self.information['selfresign'].show()
                 self.chessgame.end_game()
-            elif self.state is State.SuggestedDraw:
-                client.send(SUGGESTDRAW)
-            elif self.state is State.SelfDisconnected:
-                client.send(DISCONNECT)
-                self.state = State.Finished
+                break
+            elif self.state is GameState.SuggestedDraw:
+                client.send(Message.SUGGESTDRAW)
+            elif self.state is GameState.SelfDisconnected:
+                client.send(Message.DISCONNECT)
+                self.state = GameState.Finished
                 self.chessgame.end_game()
-            elif self.state == State.AcceptedDraw:
+            elif self.state is GameState.AcceptedDraw:
                 print('IT IS A DRAW BY AGREEMENT')
-                client.send(ACCEPTEDDRAW)
-                self.state = State.Draw
+                client.send(Message.ACCEPTEDDRAW)
+                self.state = GameState.Draw
                 self.information['draw'].show()
                 self.chessgame.end_game()
             l: list = self.chessgame.chessgui.chess.last_move
             data: str = f'{abs(7 - l[0][0])},{abs(7 - l[0][1])},{abs(7 - l[1][0])},{abs(7 - l[1][1])},{self.chessgame.chessgui.promoted[1]}'
             reply: str = client.send(data)
             # REPLY control
-            if reply == DISCONNECT:
-                self.state = State.OpponentDisconnected
+            if reply == Message.DISCONNECT:
+                self.state = GameState.OpponentDisconnected
                 self.information['disconnect'].show()
                 self.chessgame.end_game()
-            if reply == RESIGN:
+            if reply == Message.RESIGN:
                 print('OPPONENT RESIGNED')
-                self.state = State.Won
+                self.state = GameState.Won
                 self.chessgame.end_game()
                 self.information['opporesign'].show()
-            elif reply == SUGGESTDRAW:
+            elif reply == Message.SUGGESTDRAW:
                 print('OPPONENT SUGGESTED DRAW')
-                self.end_game_message('Draw by agreement', 'Do you agree for a draw?', State.AcceptedDraw)
-                if self.state == State.AcceptedDraw:
-                    client.send(ACCEPTEDDRAW)
-                    self.state = State.Draw
+                self.end_game_message('Draw by agreement', 'Do you agree for a draw?', GameState.AcceptedDraw)
+                if self.state == GameState.AcceptedDraw:
+                    client.send(Message.ACCEPTEDDRAW)
+                    self.state = GameState.Draw
                     self.information['draw'].show()
-            elif reply == ACCEPTEDDRAW:
+            elif reply == Message.ACCEPTEDDRAW:
                 print('OPPONENT ACCEPTED DRAW')
-                self.state = State.Draw
+                self.state = GameState.Draw
                 self.chessgame.end_game()
                 self.information['draw'].show()
             # WIN/LOSE control
-            if not self.chessgame.chessgui.enable_mouse_click and self.state is State.Started:
+            if not self.chessgame.chessgui.enable_mouse_click and self.state is GameState.Started:
                 if self.chessgame.chessgui.color == 'w':
                     if self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] == self.chessgame.chessgui.color:
                         self.information['win'].show()
-                        self.state = State.Won
+                        self.state = GameState.Won
                     else:
                         self.information['defeat'].show()
-                        self.state = State.Defeated
+                        self.state = GameState.Defeated
                 elif self.chessgame.chessgui.color == 'b':
                     if self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] != self.chessgame.chessgui.color:
                         self.information['win'].show()
-                        self.state = State.Won
+                        self.state = GameState.Won
                     else:
                         self.information['defeat'].show()
-                        self.state = State.Defeated
+                        self.state = GameState.Defeated
             # SYNCHRONIZE chessboard
             try:
                 op: list = reply.split(',')
                 self.chessgame.chessgui.manual_interaction(int(op[0]), int(op[1]), int(op[2]), int(op[3]), str(op[4]))
-                if op[6] == 'R' and self.state is State.Waiting:
-                    self.state = State.Started
+                if op[6] == 'R' and self.state is GameState.Waiting:
+                    self.state = GameState.Started
                     self.start_multiplayer_game()
             except Exception as exception:
                 print(f'[EXCEPTION] {self.state} Exception raised during synchronization.')
-        self.hide_information()
+        # self.hide_information()
 
 
-class AHugeLie(QWidget):
-    def __init__(self, parent: Application):
+class TransparentScreen(QWidget):
+    def __init__(self, parent):
         super().__init__(parent=parent)
-        self.parent: Application = parent
+        self.parent = parent
         self.setFixedSize(self.parent.width(), self.parent.height())
-        self.background: QLabel = QLabel(self)
-        self.background.resize(self.width(), self.height())
-        self.background.setStyleSheet("background-color: rgba(46, 46, 46, 220);")
+        self.background: QLabel = self.create_background()
         self.settings: Settings = Settings(self)
-        self.settings.show()
         self.hide()
 
-    def manual_resize(self, width: int, height: int):
-        self.setFixedSize(width, height)
-        self.background.resize(width, height)
-        self.settings.move(int(self.width()/2-self.settings.width()/2), int(self.height()/2-self.settings.height()/2))
+    def create_background(self) -> QLabel:
+        background: QLabel = QLabel(self)
+        background.resize(self.width(), self.height())
+        background.setStyleSheet("background-color: rgba(46, 46, 46, 220);")
+        return background
+
+    def resizeEvent(self, event) -> None:
+        self.setFixedSize(self.parent.width(), self.parent.height())
+        self.background.resize(self.parent.width(), self.parent.height())
+        self.settings.move(int(self.width() / 2 - self.settings.width() / 2), int(self.height() / 2 - self.settings.height() / 2))
 
 
 class Settings(QWidget):
-    def __init__(self, parent: AHugeLie):
+    def __init__(self, parent: TransparentScreen):
         super().__init__(parent=parent)
-        self.parent: AHugeLie = parent
+        self.parent: TransparentScreen = parent
         self.setMinimumSize(S*5, S*4)
         self.move(int(self.parent.width() / 2-self.width() / 2), S+ int(self.parent.height() / 2-self.height() / 2))
-        self.hide()
 
         self.create_main_label()
         # self.checkbox: QCheckBox = self.create_checkbox()
         self.combobox_pieces: QComboBox = self.create_combobox('Pieces: ', 'Assets/Images/Pieces/', 0)
         self.combobox_pieces.currentTextChanged.connect(lambda: set_piece_style(self.combobox_pieces.currentText()))
         self.combobox_pieces.setCurrentText('standardhd')
+
         self.combobox_chessboard: QComboBox = self.create_combobox('Chessboard: ', 'Assets/Images/Chessboard/', self.combobox_pieces.height())
         self.combobox_chessboard.currentTextChanged.connect(lambda: set_chessboard_style(self.combobox_chessboard.currentText()))
         self.combobox_chessboard.setCurrentText('standard')
 
-    def create_main_label(self):
+    def create_main_label(self) -> None:
         main: QLabel = QLabel(self)
         main.setText('Settings')
         main.setFont(QFont('Arial', FS*2))
@@ -353,7 +386,7 @@ class Settings(QWidget):
         message.move(self.width() / 2 - message.width() / 2, main.height()+message.height())
 
     def resizeEvent(self, event) -> None:
-        self.move(int(self.parent.width() / 2-self.width() / 2), S+int(self.parent.height() / 2-self.height() / 2))
+        self.move(int(self.parent.width() / 2-self.width() / 2), int(self.parent.height() / 2-self.height() / 2))
 
     def create_checkbox(self) -> QCheckBox:
         checkbox: QCheckBox = QCheckBox(parent=self)

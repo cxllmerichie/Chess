@@ -136,7 +136,7 @@ def convert(_list: list) -> list:
     return [(abs(7 - _list[0][0]), abs(7 - _list[0][1])), (abs(7 - _list[1][0]), abs(7 - _list[1][1]))]
 
 
-class Status:
+class Hint:
     Singleplayer = '[Ctrl+R] start new game, [Ctrl+M] return to menu.'
     Practice = '[Ctrl+R] reset the game, [Ctrl+T] enable timers reseting the game/disable timers, [Ctrl+M] return to menu, [Ctrl+H] show/hide this hint.'
     Multiplayer = '[Ctrl+R] resign, [Ctrl+D] suggest draw, [Ctrl+M] return to menu, [Ctrl+H] show/hide this hint.'
@@ -144,39 +144,44 @@ class Status:
     Settings = ''
 
 
-class State(Enum):
+class GameState(Enum):
     NoState = -1
     Waiting = 2
+    Started = 0
     Resigned = 4
+    SuggestedDraw = 6
+    AcceptedDraw = 5
     Draw = 12
     OpponentDisconnected = 13
     SelfDisconnected = 14
-    SuggestedDraw = 6
-    AcceptedDraw = 5
     Defeated = 7
     Won = 8
-    Started = 0
     Finished = 1
-    Proceeding = 3
-    Practice = 9
     PracticeNoTime = 10
     PracticeWithTime = 11
 
 
-class Text:
+class StateText:
     Waiting = 'Waiting for another player'
-    OpponentResign = 'Opponent Resigned!'
+    OppoResign = 'Opponent Resigned!'
     SelfResign = 'You Resigned...'
     Draw = 'It is a Draw.'
-    Win = 'You Win!'
+    Win = 'You Won!'
     Defeat = 'You Lost...'
-    OpponentDisconnect = 'Opponent disconnected'
+    OppoDisconnect = 'Opponent disconnected'
 
 
 color: dict = {'waiting': 'red',
                'opporesign': 'green',
                'selfresign': 'red',
-               'draw': 'gray',
+               'draw': 'yellow',
                'win': 'green',
                'defeat': 'red',
                'disconnect': 'gray'}
+
+
+class ScreenState(Enum):
+    Minimized = -1
+    Normal = 0
+    Maximized = 1
+    FullScreen = 2

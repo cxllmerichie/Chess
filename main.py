@@ -1,5 +1,4 @@
 # CHESS GAME FEATURING
-# ToDo: highlight last move of the opponent
 # ToDo: AI algorithm
 # ToDo: voice assistant
 # ToDo: create and store log.db for singleplayer (and maybe practice/multiplayer)
@@ -27,12 +26,12 @@ from PyQt5.QtWidgets import QApplication
 from Common.Application import Application
 from sys import argv
 
+
 if __name__ == '__main__':
     # server: socket = socket(AF_INET, SOCK_STREAM)
     # if server.connect_ex((IP, PORT)) is not State.Started.value:
     #     start_new_thread(server_startup, ())
     # server.close()
-
     application: QApplication = QApplication(argv)
     app: Application = Application()
     application.exec()
