@@ -168,21 +168,23 @@ class Hint:
     Settings = ''
 
 
-class GameState(Enum):
-    NoState = -1
-    Waiting = 2
-    Started = 0
-    Resigned = 4
-    SuggestedDraw = 6
-    AcceptedDraw = 5
-    Draw = 12
-    OpponentDisconnected = 13
-    SelfDisconnected = 14
-    Defeated = 7
-    Won = 8
-    Finished = 1
-    PracticeNoTime = 10
-    PracticeWithTime = 11
+class State(Enum):
+    NoState = 'NoState'
+
+    PracticeNoTime = 'PracticeNoTime'
+    PracticeWithTime = 'PracticeWithTime'
+
+    Waiting = 'waiting'
+    Started = 'Started'
+    Won = 'win'
+    Defeated = 'defeat'
+    SelfResigned = 'selfresign'
+    OpponentResigned = 'opporesign'
+    SuggestedDraw = 'SuggestedDraw'
+    AcceptedDraw = 'draw'
+    Draw = 'draw'
+    OpponentDisconnected = 'disconnect'
+    SelfDisconnected = 'SelfDisconnected'
 
 
 class StateText:
@@ -216,3 +218,8 @@ class TimerState(Enum):
     Stopped = 1
     Paused = 2
     Resumed = 3
+
+
+class GameFinished(Exception):
+    def __init__(self):
+        pass

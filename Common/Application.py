@@ -2,7 +2,8 @@ from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut, QWidget, QCheckBox, QComboBox, QLineEdit, QPushButton
 from PyQt5.QtGui import QPixmap, QFont, QKeySequence, QResizeEvent, QIcon, QIntValidator
 from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON, S, FRAMERATE
-from Common.Library import app_btn, app_label, color, Hint, GameState, StateText, ScreenState, set_pieces, set_chessboard
+from Common.Library import app_btn, app_label, color, Hint, State, StateText, ScreenState, set_pieces, \
+    set_chessboard, GameFinished
 from ClientMultipalyer.ChessGame import ChessGame as MChessGame
 from ClientSingleplayer.ChessGame import ChessGame as SChessGame
 from ServerClient.config import Message
@@ -23,8 +24,9 @@ class Application(QMainWindow):
         self.setWindowIcon(QIcon(ICON))
 
         self.chessgame = SChessGame(self)
-        self.state: GameState = GameState.NoState
+        self.state: State = State.NoState
         self.hint: str = Hint.Menu
+        self.clock: Clock = Clock()
 
         self.background: QLabel = self.create_background()
         self.menu_buttons: list = self.create_menu_buttons()
@@ -92,7 +94,6 @@ class Application(QMainWindow):
 
     def f11(self) -> None:
         if not self.isFullScreen():
-            self.hide()
             self.showFullScreen()
             return None
         if self.last_screen_state is ScreenState.Normal:
@@ -103,10 +104,10 @@ class Application(QMainWindow):
             self.last_screen_state = ScreenState.Maximized
 
     def ctrl_r(self) -> None:
-        if self.state is GameState.PracticeWithTime or self.state is GameState.PracticeNoTime:
+        if self.state is State.PracticeWithTime or self.state is State.PracticeNoTime:
             self.chessgame.reset_game()
-        elif self.state is GameState.Started:
-            self.end_game_message('Resignation', 'Do you want to resign?', GameState.Resigned)
+        elif self.state is State.Started:
+            self.end_game_message('Resignation', 'Do you want to resign?', State.SelfResigned)
 
     # STATUS BAR (HINT)
     def change_status_bar(self, status: str) -> None:
@@ -153,7 +154,7 @@ class Application(QMainWindow):
         self.hide_information()
         self.change_status_bar(Hint.Menu)
         self.hide_information()
-        self.state = GameState.SelfDisconnected
+        # self.state = GameState.SelfDisconnected
         self.chessgame.close()
         self.change_background(MENU_BACKGROUND)
         self.statusBar().show()
@@ -192,7 +193,7 @@ class Application(QMainWindow):
     # GAMEMODES
     def gamemode_practice(self) -> None:
         self.change_status_bar(Hint.Practice)
-        self.state = GameState.PracticeWithTime
+        self.state = State.PracticeWithTime
         self.hide_menu_buttons()
         self.change_background(GAME_BACKGROUND)
         self.chessgame = SChessGame(self)
@@ -202,7 +203,7 @@ class Application(QMainWindow):
 
     def gamemode_multiplayer(self) -> None:
         client: Client = Client()
-        self.state = GameState.Waiting
+        self.state = State.Waiting
         self.show_waiting_screen()
         self.chessgame = MChessGame(self, client.receive()[11])
         self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
@@ -227,25 +228,24 @@ class Application(QMainWindow):
     # @DECORATOR
     def resizeEvent(self, event):
         self.resize_menu_buttons()
-        self.resize_information()
-        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
-        self.resize_menu_buttons()
         self.resize_background()
+        self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
         self.set_status_bar()
+        self.resize_information()
         self.settings.resizeEvent(QResizeEvent)
 
     # PRACTICE PROCEDURES
     def timer_control(self) -> None:
-        if self.state is GameState.PracticeWithTime:
+        if self.state is State.PracticeWithTime:
             self.chessgame.disable_timers()
-            self.state = GameState.PracticeNoTime
-        elif self.state is GameState.PracticeNoTime:
+            self.state = State.PracticeNoTime
+        elif self.state is State.PracticeNoTime:
             self.chessgame.enable_timers()
-            self.state = GameState.PracticeWithTime
+            self.state = State.PracticeWithTime
 
     # MULTIPLAYER PROCEDURES
     def suggest_draw(self) -> None:
-        self.state = GameState.SuggestedDraw
+        self.state = State.SuggestedDraw
 
     def show_waiting_screen(self) -> None:
         self.hide_menu_buttons()
@@ -259,84 +259,73 @@ class Application(QMainWindow):
     def message_box_reply(self, title: str, question: str):
         return QMessageBox().question(self, title, question, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
 
-    def end_game_message(self, title: str, question: str, state: GameState) -> None:
+    def end_game_message(self, title: str, question: str, state: State) -> None:
         if self.message_box_reply(title, question) == QMessageBox.Yes:
             self.state = state
             self.chessgame.end_game()
 
     def connect_to_server(self, client: Client) -> None:
-        clock: Clock = Clock()
-        while self.state is not GameState.Finished:
-            clock.tick(FRAMERATE)
-            # STATE control
-            if self.state is GameState.Resigned:
-                client.send(Message.RESIGN)
-                self.information['selfresign'].show()
-                self.chessgame.end_game()
-                break
-            elif self.state is GameState.SuggestedDraw:
-                client.send(Message.SUGGESTDRAW)
-            elif self.state is GameState.SelfDisconnected:
-                client.send(Message.DISCONNECT)
-                self.state = GameState.Finished
-                self.chessgame.end_game()
-            elif self.state is GameState.AcceptedDraw:
-                print('IT IS A DRAW BY AGREEMENT')
-                client.send(Message.ACCEPTEDDRAW)
-                self.state = GameState.Draw
-                self.information['draw'].show()
-                self.chessgame.end_game()
-            l: list = self.chessgame.chessgui.chess.last_move
-            data: str = f'{abs(7 - l[0][0])},{abs(7 - l[0][1])},{abs(7 - l[1][0])},{abs(7 - l[1][1])},{self.chessgame.chessgui.promoted[1]}'
-            reply: str = client.send(data)
-            # REPLY control
-            if reply == Message.DISCONNECT:
-                self.state = GameState.OpponentDisconnected
-                self.information['disconnect'].show()
-                self.chessgame.end_game()
-            if reply == Message.RESIGN:
-                print('OPPONENT RESIGNED')
-                self.state = GameState.Won
-                self.chessgame.end_game()
-                self.information['opporesign'].show()
-            elif reply == Message.SUGGESTDRAW:
-                print('OPPONENT SUGGESTED DRAW')
-                self.end_game_message('Draw by agreement', 'Do you agree for a draw?', GameState.AcceptedDraw)
-                if self.state == GameState.AcceptedDraw:
-                    client.send(Message.ACCEPTEDDRAW)
-                    self.state = GameState.Draw
-                    self.information['draw'].show()
-            elif reply == Message.ACCEPTEDDRAW:
-                print('OPPONENT ACCEPTED DRAW')
-                self.state = GameState.Draw
-                self.chessgame.end_game()
-                self.information['draw'].show()
-            # WIN/LOSE control
-            if not self.chessgame.chessgui.enable_mouse_click and self.state is GameState.Started:
-                if self.chessgame.chessgui.color == 'w':
-                    if self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] == self.chessgame.chessgui.color:
-                        self.information['win'].show()
-                        self.state = GameState.Won
-                    else:
-                        self.information['defeat'].show()
-                        self.state = GameState.Defeated
-                elif self.chessgame.chessgui.color == 'b':
-                    if self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] != self.chessgame.chessgui.color:
-                        self.information['win'].show()
-                        self.state = GameState.Won
-                    else:
-                        self.information['defeat'].show()
-                        self.state = GameState.Defeated
-            # SYNCHRONIZE chessboard
+        while True:
+            self.clock.tick(FRAMERATE)
             try:
-                op: list = reply.split(',')
-                self.chessgame.chessgui.manual_interaction(int(op[0]), int(op[1]), int(op[2]), int(op[3]), str(op[4]))
-                if op[6] == 'R' and self.state is GameState.Waiting:
-                    self.state = GameState.Started
-                    self.start_multiplayer_game()
-            except Exception as exception:
-                print(f'[EXCEPTION] {self.state} Exception raised during synchronization.')
-        # self.hide_information()
+                # STATE control
+                if self.state is State.SelfResigned:
+                    client.send(Message.RESIGN)
+                    raise GameFinished
+                elif self.state is State.SuggestedDraw:
+                    client.send(Message.SUGGESTDRAW)
+                elif self.state is State.SelfDisconnected:
+                    client.send(Message.DISCONNECT)
+                    raise GameFinished
+                elif self.state is State.AcceptedDraw:
+                    client.send(Message.ACCEPTEDDRAW)
+                    self.state = State.Draw
+                    raise GameFinished
+                l: list = self.chessgame.chessgui.chess.last_move
+                data: str = f'{abs(7 - l[0][0])},{abs(7 - l[0][1])},{abs(7 - l[1][0])},{abs(7 - l[1][1])},{self.chessgame.chessgui.promoted[1]}'
+                reply: str = client.send(data)
+                # print(f'Sent: ({data})')
+                # print(f'Reply: ({reply})')
+                # REPLY control
+                if reply == Message.RESIGN:
+                    self.state = State.OpponentResigned
+                    raise GameFinished
+                elif reply == Message.DISCONNECT:
+                    self.state = State.OpponentDisconnected
+                    raise GameFinished
+                elif reply == Message.SUGGESTDRAW:
+                    print('OPPONENT SUGGESTED DRAW')
+                    self.end_game_message('Draw by agreement', 'Do you agree for a draw?', State.AcceptedDraw)
+                    if self.state == State.AcceptedDraw:
+                        client.send(Message.ACCEPTEDDRAW)
+                        self.state = State.Draw
+                        raise GameFinished
+                elif reply == Message.ACCEPTEDDRAW:
+                    self.state = State.Draw
+                    raise GameFinished
+                # WIN/LOSE control
+                if not self.chessgame.chessgui.enable_mouse_click and self.state is State.Started:
+                    if self.chessgame.chessgui.color == 'w':
+                        self.state = State.Won if self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] == self.chessgame.chessgui.color else State.Defeated
+                    elif self.chessgame.chessgui.color == 'b':
+                        self.state = State.Won if self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] != self.chessgame.chessgui.color else State.Defeated
+                    raise GameFinished
+                # SYNCHRONIZE chessboard
+                try:
+                    op: list = reply.split(',')
+                    self.chessgame.chessgui.manual_interaction(int(op[0]), int(op[1]), int(op[2]), int(op[3]), str(op[4]))
+                    if op[6] == 'R' and self.state is State.Waiting:
+                        self.state = State.Started
+                        self.start_multiplayer_game()
+                except ValueError as error:
+                    print(f'Last reply: ({reply}), self.state: ({self.state}).')
+                    raise GameFinished
+            except GameFinished:
+                self.chessgame.end_game()
+                if self.state.value in self.information.keys():
+                    self.information[self.state.value].show()
+                self.state = State.NoState
+                break
 
 
 class TransparentScreen(QWidget):
