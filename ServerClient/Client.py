@@ -22,17 +22,19 @@ class Client:
             self.client.connect((IP, PORT))
             self.data = self.client.recv(BYTES).decode(encoding=ENCODING)
         except error as socket_error:
-            print(f'[CLIENT] Error. (orig: {socket_error})')
+            return socket_error
 
     def receive(self):
         try:
             return self.data
         except error as socket_error:
-            print(f'[CLIENT | Receive] Error: ({socket_error}).')
+            return socket_error
+            # print(f'[CLIENT | Receive] Error: ({socket_error}).')
 
     def send(self, data):
         try:
             self.client.send(str.encode(data))
             return self.client.recv(BYTES).decode(encoding=ENCODING)
         except error as socket_error:
-            print(f'[CLIENT | SEND] Error: ({socket_error}).')
+            return socket_error
+            # print(f'[CLIENT | SEND] Error: ({socket_error}).')

@@ -195,6 +195,7 @@ class StateText:
     Win = 'You Won!'
     Defeat = 'You Lost...'
     OppoDisconnect = 'Opponent disconnected'
+    ServerConnectError = 'Server does not respond.\nMake sure the configuration is correct and try again.'
 
 
 color: dict = {'waiting': 'red',
@@ -203,7 +204,8 @@ color: dict = {'waiting': 'red',
                'draw': 'yellow',
                'win': 'green',
                'defeat': 'red',
-               'disconnect': 'gray'}
+               'disconnect': 'gray',
+               'connectionerror': 'white'}
 
 
 class ScreenState(Enum):
@@ -211,15 +213,3 @@ class ScreenState(Enum):
     Normal = 0
     Maximized = 1
     FullScreen = 2
-
-
-class TimerState(Enum):
-    Started = 0
-    Stopped = 1
-    Paused = 2
-    Resumed = 3
-
-
-class GameFinished(Exception):
-    def __init__(self):
-        pass

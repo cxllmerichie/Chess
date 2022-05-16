@@ -1,6 +1,6 @@
 from socket import AF_INET, SOCK_STREAM, socket, error
 from threading import Thread, active_count
-from config import ENCODING, DEFAULT, BYTES, CONNECTION_LIMIT, Message
+from config import ENCODING, DEFAULT, BYTES, CONNECTION_LIMIT
 from ServerClient.Client import IP, PORT
 import random
 
@@ -24,27 +24,11 @@ class Server:
                 if not data:
                     print('[SERVER | CLIENT HANDLER] No data. Disconnecting.')
                     break
-                elif data == Message.DISCONNECT:
-                    self.data[pair_id][player_id] = Message.DISCONNECT
-                    client.sendall(str.encode(Message.DISCONNECT))
-                elif data == Message.RESIGN:
-                    self.data[pair_id][player_id] = Message.RESIGN
-                    client.sendall(str.encode(Message.RESIGN))
-                elif data == Message.SUGGESTDRAW:
-                    self.data[pair_id][player_id] = Message.SUGGESTDRAW
-                    client.sendall(str.encode(Message.SUGGESTDRAW))
-                elif data == Message.ACCEPTEDDRAW:
-                    self.data[pair_id][player_id] = Message.ACCEPTEDDRAW
-                    client.sendall(str.encode(Message.ACCEPTEDDRAW))
-                else:
-                    try:
-                        self.data[pair_id][player_id] = data + self.data[pair_id][player_id][10:13] + 'R'
-                    except Exception as exception:
-                        pass  # opponent resigned or it is a draw
-                    reply = self.data[pair_id][0] if player_id == 1 else self.data[pair_id][1]
-                    # print(f'Received (#{player_id}): {data}')
-                    # print(f'Sending (#{player_id}): {reply}')
-                    client.sendall(str.encode(reply))
+                self.data[pair_id][player_id] = data + self.data[pair_id][player_id][10:13] + 'R'
+                reply = self.data[pair_id][0] if player_id == 1 else self.data[pair_id][1]
+                # print(f'Received (#{player_id}): {data}')
+                # print(f'Sending (#{player_id}): {reply}')
+                client.sendall(str.encode(reply))
             except Exception as exception:
                 print(f'[SERVER | CLIENT HANDLER] Mainloop exception. (orig: {str(exception)})')
                 break

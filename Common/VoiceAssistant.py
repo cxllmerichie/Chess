@@ -1,8 +1,5 @@
 from speech_recognition import Recognizer, Microphone, AudioData
-import datetime
-import subprocess
 import pyttsx3
-import webbrowser
 
 
 class VoiceAssistant:
@@ -14,13 +11,13 @@ class VoiceAssistant:
 
     def start(self):
         with Microphone() as source:
-            # print('Cleaning background noises, please wait...')
-            # self.recognizer.adjust_for_ambient_noise(self.source, duration=0.5)
+            print('Cleaning background noises, please wait...')
+            self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
             print('[ASSISTANT] Ask me something:')
             audio: AudioData = self.recognizer.listen(source)
         try:
-            # command: str = self.recognizer.recognize_google(recorded_audio)
-            str_audio: str = self.recognizer.recognize_google(audio)
+            # str_audio: str = self.recognizer.recognize_google(audio)
+            str_audio: str = self.recognizer.recognize_sphinx(audio)
             print(str_audio)
             self.engine.say(str_audio)
             if 'exit' in str_audio:

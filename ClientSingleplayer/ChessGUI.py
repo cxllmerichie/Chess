@@ -57,8 +57,7 @@ class ChessGUI(QWidget):
     def eventFilter(self, obj, event) -> bool:
         if not self.enable_mouse_click:
             if event.type() in (QEvent.MouseButtonPress, QEvent.MouseButtonDblClick):
-                if event.timer_control() == Qt.LeftButton:
-                    return True
+                return True
         return super(ChessGUI, self).eventFilter(obj, event)
 
     # INDICATORS

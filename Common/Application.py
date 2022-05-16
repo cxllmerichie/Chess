@@ -2,17 +2,17 @@ from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut, QWidget, QCheckBox, QComboBox, QLineEdit, QPushButton
 from PyQt5.QtGui import QPixmap, QFont, QKeySequence, QResizeEvent, QIcon, QIntValidator
 from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON, S, FRAMERATE
-from Common.Library import app_btn, app_label, color, Hint, State, StateText, ScreenState, set_pieces, \
-    set_chessboard, GameFinished
+from Common.Library import app_btn, app_label, color, Hint, State, StateText, ScreenState, set_pieces, set_chessboard
 from ClientMultipalyer.ChessGame import ChessGame as MChessGame
 from ClientSingleplayer.ChessGame import ChessGame as SChessGame
-from ServerClient.config import Message
 from ServerClient.Client import Client, set_ip, set_port
 from _thread import start_new_thread
 from contextlib import redirect_stdout
 with redirect_stdout(None):
     from pygame.time import Clock
 from os import listdir
+from time import sleep
+from sys import exit
 
 
 class Application(QMainWindow):
@@ -32,13 +32,13 @@ class Application(QMainWindow):
         self.menu_buttons: list = self.create_menu_buttons()
         self.information: dict = self.create_information()
         self.show_menu_buttons()
+        self.shortcuts()
 
         self.setMinimumSize(S*10, S*10)
         self.move(SW / 2 - self.width() / 2, SH / 2 - self.height() / 2)
-        self.shortcuts()
         self.settings: TransparentScreen = TransparentScreen(self)
-        self.showNormal()
         self.last_screen_state: ScreenState = ScreenState.Normal
+        self.showNormal()
 
     # BACKGROUND
     def create_background(self) -> QLabel:
@@ -95,13 +95,10 @@ class Application(QMainWindow):
     def f11(self) -> None:
         if not self.isFullScreen():
             self.showFullScreen()
-            return None
-        if self.last_screen_state is ScreenState.Normal:
+        elif self.last_screen_state is ScreenState.Normal:
             self.showNormal()
-            return None
-        if self.last_screen_state is ScreenState.Maximized:
-            self.showMaximized()
-            self.last_screen_state = ScreenState.Maximized
+        elif self.last_screen_state is ScreenState.Maximized:
+            self.f10()
 
     def ctrl_r(self) -> None:
         if self.state is State.PracticeWithTime or self.state is State.PracticeNoTime:
@@ -128,7 +125,8 @@ class Application(QMainWindow):
             'draw': app_label(StateText.Draw, QSize(self.width(), self.height()), color['draw'], self),
             'disconnect': app_label(StateText.OppoDisconnect, QSize(self.width(), self.height()), color['disconnect'], self),
             'win': app_label(StateText.Win, QSize(self.width(), self.height()), color['win'], self),
-            'defeat': app_label(StateText.Defeat, QSize(self.width(), self.height()), color['defeat'], self)
+            'defeat': app_label(StateText.Defeat, QSize(self.width(), self.height()), color['defeat'], self),
+            'connectionerror': app_label(StateText.ServerConnectError, QSize(self.width(), self.height()), color['connectionerror'], self)
         }
 
     def resize_information(self) -> None:
@@ -162,7 +160,7 @@ class Application(QMainWindow):
 
     def return_to_menu(self) -> None:
         if self.wallpaper != MENU_BACKGROUND:
-            if self.message_box_reply('Menu', 'Return to menu?') == QMessageBox.Yes:
+            if self.message_box_reply('Menu', 'Return to menu?', True) == QMessageBox.Yes:
                 self.return_to_menu_procedure()
 
     # MENU BUTTONS
@@ -172,7 +170,7 @@ class Application(QMainWindow):
             app_btn('Play vs Player', (self.width() / 2 - BW / 2, self.height() / 2, BW, BH), lambda: self.gamemode_multiplayer(), self),
             app_btn('Practice', (self.width() / 2 - BW / 2, self.height() / 2 + BH, BW, BH), lambda: self.gamemode_practice(), self),
             app_btn('Settings', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 2, BW, BH), lambda: self.settings.show(), self),
-            app_btn('Exit', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 3, BW, BH), lambda: self.close(), self)
+            app_btn('Exit', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 3, BW, BH), lambda: exit(), self)
         ]
 
     def resize_menu_buttons(self) -> None:
@@ -201,8 +199,21 @@ class Application(QMainWindow):
         self.chessgame.show()
         self.chessgame.start_game()
 
+    def connection_error(self, screen):
+        sleep(3)
+        self.information['connectionerror'].hide()
+        screen.hide()
+
     def gamemode_multiplayer(self) -> None:
-        client: Client = Client()
+        try:
+            client: Client = Client()
+        except:
+            screen = TransparentScreen(self, False)
+            screen.show()
+            self.information['connectionerror'] = app_label(StateText.ServerConnectError, QSize(self.width(), self.height()), color['connectionerror'], self)
+            self.information['connectionerror'].show()
+            start_new_thread(self.connection_error, (screen, ))
+            return None
         self.state = State.Waiting
         self.show_waiting_screen()
         self.chessgame = MChessGame(self, client.receive()[11])
@@ -219,7 +230,7 @@ class Application(QMainWindow):
 
     # @DECORATOR
     def closeEvent(self, event):
-        if self.message_box_reply('Exit', 'Close the application?') == QMessageBox.Yes:
+        if self.message_box_reply('Exit', 'Close the application?', True) == QMessageBox.Yes:
             self.chessgame.end_game()
             event.accept()
         else:
@@ -256,13 +267,10 @@ class Application(QMainWindow):
         self.information['waiting'].hide()
         self.chessgame.start_game()
 
-    def message_box_reply(self, title: str, question: str):
-        return QMessageBox().question(self, title, question, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
-    def end_game_message(self, title: str, question: str, state: State) -> None:
-        if self.message_box_reply(title, question) == QMessageBox.Yes:
-            self.state = state
-            self.chessgame.end_game()
+    def message_box_reply(self, title: str, question: str, asking: bool):
+        if asking:
+            return QMessageBox().question(self, title, question, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        return QMessageBox.Yes
 
     def connect_to_server(self, client: Client) -> None:
         while self.state is State.Waiting or self.state is State.Started:
@@ -294,12 +302,14 @@ class Application(QMainWindow):
 
 
 class TransparentScreen(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, with_object: bool = True):
         super().__init__(parent=parent)
         self.parent = parent
         self.setFixedSize(self.parent.width(), self.parent.height())
         self.background: QLabel = self.create_background()
-        self.settings: Settings = Settings(self)
+        self.with_object: bool = with_object
+        if self.with_object:
+            self.settings: Settings = Settings(self)
         self.hide()
 
     def create_background(self) -> QLabel:
@@ -311,7 +321,8 @@ class TransparentScreen(QWidget):
     def resizeEvent(self, event) -> None:
         self.setFixedSize(self.parent.width(), self.parent.height())
         self.background.resize(self.parent.width(), self.parent.height())
-        self.settings.move(int(self.width() / 2 - self.settings.width() / 2), int(self.height() / 2 - self.settings.height() / 2))
+        if self.with_object:
+            self.settings.move(int(self.width() / 2 - self.settings.width() / 2), int(self.height() / 2 - self.settings.height() / 2))
 
 
 class Settings(QWidget):
@@ -319,7 +330,7 @@ class Settings(QWidget):
         super().__init__(parent=parent)
         self.parent: TransparentScreen = parent
         self.setMinimumSize(S*5, S*4)
-        self.move(int(self.parent.width() / 2-self.width() / 2), S+ int(self.parent.height() / 2-self.height() / 2))
+        self.move(int(self.parent.width() / 2-self.width() / 2), S + int(self.parent.height() / 2-self.height() / 2))
 
         self.create_main_label()
         # self.checkbox: QCheckBox = self.create_checkbox()

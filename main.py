@@ -2,7 +2,7 @@
 # ToDo: AI algorithm
 # ToDo: voice assistant
 # ToDo: create and store log.db for singleplayer (and maybe practice/multiplayer)
-# MULTIPLAYER (threading problem)
+# MULTIPLAYER
 # ToDo: fix promotion (threading)
 # ToDo: disconnect, draw, resign (server&client)
 # SERVER & CLIENT

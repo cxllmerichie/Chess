@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QMessageBox
 from PyQt5.QtCore import QSize, Qt
-from Common.Library import game_btn, str_time_to_float, text_label, TimerState
+from Common.Library import game_btn, str_time_to_float, text_label
 from Common.Constants import GAME_TIME, S, FRAMERATE, TimePrecision
 from string import ascii_uppercase
 from ClientSingleplayer.ChessGUI import ChessGUI
@@ -127,14 +127,12 @@ class Timer:
         if self.state:
             return None
         self.state = True
-        print(f'Start: {self.time}, {self.label.text()}')
         self.thread = Thread(target=lambda: self.countdown(amount=str_time_to_float(self.time)))
         self.thread.start()
 
     def stop(self) -> None:
         if not self.state:
             return None
-        print(f'Stop: {self.time}, {self.label.text()}')
         self.state = False
         try:
             self.thread.join()
@@ -144,13 +142,11 @@ class Timer:
     def pause(self) -> None:
         if not self.state:
             return None
-        print(f'Pause: {self.time}, {self.label.text()}')
         self.time = self.label.text()
         self.stop()
 
     def resume(self) -> None:
         if self.state:
             return None
-        print(f'Resume: {self.time}, {self.label.text()}')
         self.thread: Thread = Thread(target=lambda: self.countdown(amount=str_time_to_float(self.time)))
         self.start()
