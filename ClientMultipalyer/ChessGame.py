@@ -56,6 +56,8 @@ class ChessGame(QWidget):
         self.timers['w'].start()
         self.highlighters['w'].show()
         while self.chessgui.enable_mouse_click and str_time_to_float(self.timers['b'].time) > 0 and str_time_to_float(self.timers['w'].time) > 0:
+            if self.chessgui.promoted[0]:
+                continue
             cp = ['w', 'b']
             if self.chessgui.turn != 0 and self.color == 'b':
                 cp = ['b', 'w']

@@ -84,7 +84,7 @@ def set_exists(_set: set) -> set:
     return __set
 
 
-def image_label(x: int, y: int, width: int, height: int, img: str, window: QWidget) -> QLabel:
+def image_label(x: int, y: int, width: int, height: int, img: str, window) -> QLabel:
     label = QLabel(parent=window)
     label.setPixmap(QPixmap(image(img)).scaled(S, S, Qt.KeepAspectRatio, Qt.SmoothTransformation))
     label.resize(width, height)

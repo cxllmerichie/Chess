@@ -209,8 +209,8 @@ class Application(QMainWindow):
             client: Client = Client()
         except:
             screen = TransparentScreen(self, False)
-            screen.show()
             self.information['connectionerror'] = app_label(StateText.ServerConnectError, QSize(self.width(), self.height()), color['connectionerror'], self)
+            screen.show()
             self.information['connectionerror'].show()
             start_new_thread(self.connection_error, (screen, ))
             return None
@@ -276,7 +276,13 @@ class Application(QMainWindow):
         while self.state is State.Waiting or self.state is State.Started:
             self.clock.tick(FRAMERATE)
             l: list = self.chessgame.chessgui.chess.last_move
-            data: str = f'{abs(7 - l[0][0])},{abs(7 - l[0][1])},{abs(7 - l[1][0])},{abs(7 - l[1][1])},{self.chessgame.chessgui.promoted[1]}'
+            addon: str = '  '
+            if self.chessgame.chessgui.promoted[0] and self.chessgame.chessgui.promoted[1] == '  ':
+                addon = 'TT'
+            elif self.chessgame.chessgui.promoted[0] and self.chessgame.chessgui.promoted[1] != '  ':
+                addon = self.chessgame.chessgui.promoted[1]
+                self.chessgame.chessgui.promoted = [False, '  ']
+            data: str = f'{abs(7 - l[0][0])},{abs(7 - l[0][1])},{abs(7 - l[1][0])},{abs(7 - l[1][1])},{addon}'
             reply: str = client.send(data)
             # WIN/LOSE control
             if not self.chessgame.chessgui.enable_mouse_click and self.state is State.Started:

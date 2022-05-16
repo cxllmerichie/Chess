@@ -1,9 +1,11 @@
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import QSize, Qt, QEvent, QUrl
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from ClientMultipalyer.ChessLogic import ChessLogic, DEFAULT_MOVE
-from Common.Library import exist, image_label, sound, operate, convert
+from Common.Library import exist, image_label, sound, operate, convert, image
 from Common.Constants import S
+from time import sleep
 
 
 x1 = y1 = x2 = y2 = 0
@@ -51,23 +53,32 @@ class ChessGUI(QWidget):
                         self.play_sound(self.sound)
 
     def manual_interaction(self, _x1, _y1, _x2, _y2, promotion_piece: str) -> None:
-        if promotion_piece != '  ' and self.chess.chessboard[_x2][_y2] != promotion_piece:
-            self.chess.chessboard[_x2][_y2] = promotion_piece
-            self.label.pieces[_x2][_y2].hide()
-            self.label.pieces[_x2][_y2] = image_label(_x2 * S, _y2 * S, S, S, promotion_piece, self)
-            self.label.pieces[_x2][_y2].show()
-            self.end_game_procedures()
+        if promotion_piece == 'TT':
+            return None
         if self.chess.last_move == [(_x1, _y1), (_x2, _y2)] or [(_x1, _y1), (_x2, _y2)] == convert(DEFAULT_MOVE):
             return None
         global x1, x2, y1, y2, move_buffer
         move_buffer.append([_x1, _y1])
         move_buffer.append([_x2, _y2])
         x1, y1 = move_buffer[0][0], move_buffer[0][1]
+        x2, y2 = move_buffer[1][0], move_buffer[1][1]
         self.fill_buffers()
         self.label.show_indicators()
-        x2, y2 = move_buffer[1][0], move_buffer[1][1]
         is_moved: bool = self.manual_move_action(promotion_piece)
         self.label.hide_indicators()
+        if promotion_piece != '  ' and self.chess.chessboard[_x2][_y2] != promotion_piece:
+            # promotion_piece = 'b' + promotion_piece[1] if promotion_piece[0] == 'w' else 'w' + promotion_piece[1]
+            self.label.pieces[_x2][_y2].hide()
+            if self.color == 'b':
+                self.chess.chessboard[_x2][_y2] = 'b'+promotion_piece[1]
+            else:
+                self.chess.chessboard[_x2][_y2] = promotion_piece
+            self.label.pieces[_x2][_y2].setPixmap(QPixmap(image(promotion_piece)).scaled(S, S, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            # self.label.pieces[_x2][_y2].move(_y2*S, _x2*S)
+            # self.label.pieces[_x2][_y2].resize(S, S)
+            self.label.pieces[_x2][_y2].show()
+            # self.end_game_procedures()
+            # self.window.label.pieces[self.x][self.y] = image_label(self.y * S, self.x * S, S, S, _piece, self.window)
         self.end_game_procedures()
         if is_moved:
             self.turn += 1
@@ -287,7 +298,7 @@ class BlackPromotion(QWidget):
         self.hide()
 
     def promotional_replacement(self, _piece: str):
-        self.window.chess.chessboard[self.x][self.y] = _piece
+        self.window.chess.chessboard[self.x][self.y] = 'w'+_piece[1]
         self.window.label.pieces[self.x][self.y].hide()
         self.window.label.pieces[self.x][self.y] = image_label(self.y * S, self.x * S, S, S, _piece, self.window)
         self.window.label.pieces[self.x][self.y].show()
@@ -330,7 +341,7 @@ class Promotion(QWidget):
 
 
 class Label:
-    def __init__(self, window: QWidget, chess: ChessLogic, color: str):
+    def __init__(self, window: ChessGUI, chess: ChessLogic, color: str):
         self.background: list = self.create_background(window, chess)
         self.position: list = self.create_indicators('position', window, chess)
         self.check: list = self.create_indicators('check', window, chess)
@@ -342,7 +353,7 @@ class Label:
 
     # labels
     @staticmethod
-    def create_background(window: QWidget, chess: ChessLogic) -> list:
+    def create_background(window: ChessGUI, chess: ChessLogic) -> list:
         _background: list = []
         for y in range(len(chess.chessboard)):
             _background.append([])
@@ -353,7 +364,7 @@ class Label:
         return _background
 
     @staticmethod
-    def create_pieces(window: QWidget, chess: ChessLogic, color: str) -> list:
+    def create_pieces(window: ChessGUI, chess: ChessLogic, color: str) -> list:
         _pieces: list = []
         for y in range(len(chess.chessboard)):
             _pieces.append([])
@@ -371,7 +382,7 @@ class Label:
         return _pieces
 
     @staticmethod
-    def create_indicators(label: str, window: QWidget, chess: ChessLogic) -> list:
+    def create_indicators(label: str, window: ChessGUI, chess: ChessLogic) -> list:
         indicators: list = []
         for y in range(len(chess.chessboard)):
             indicators.append([])
