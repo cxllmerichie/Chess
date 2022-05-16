@@ -106,8 +106,8 @@ class Application(QMainWindow):
     def ctrl_r(self) -> None:
         if self.state is State.PracticeWithTime or self.state is State.PracticeNoTime:
             self.chessgame.reset_game()
-        elif self.state is State.Started:
-            self.end_game_message('Resignation', 'Do you want to resign?', State.SelfResigned)
+        #  elif self.state is State.Started:
+        #     self.end_game_message('Resignation', 'Do you want to resign?', State.SelfResigned)
 
     # STATUS BAR (HINT)
     def change_status_bar(self, status: str) -> None:
@@ -154,7 +154,7 @@ class Application(QMainWindow):
         self.hide_information()
         self.change_status_bar(Hint.Menu)
         self.hide_information()
-        # self.state = GameState.SelfDisconnected
+        self.state = State.NoState
         self.chessgame.close()
         self.change_background(MENU_BACKGROUND)
         self.statusBar().show()
@@ -265,67 +265,32 @@ class Application(QMainWindow):
             self.chessgame.end_game()
 
     def connect_to_server(self, client: Client) -> None:
-        while True:
+        while self.state is State.Waiting or self.state is State.Started:
             self.clock.tick(FRAMERATE)
-            try:
-                # STATE control
-                if self.state is State.SelfResigned:
-                    client.send(Message.RESIGN)
-                    raise GameFinished
-                elif self.state is State.SuggestedDraw:
-                    client.send(Message.SUGGESTDRAW)
-                elif self.state is State.SelfDisconnected:
-                    client.send(Message.DISCONNECT)
-                    raise GameFinished
-                elif self.state is State.AcceptedDraw:
-                    client.send(Message.ACCEPTEDDRAW)
-                    self.state = State.Draw
-                    raise GameFinished
-                l: list = self.chessgame.chessgui.chess.last_move
-                data: str = f'{abs(7 - l[0][0])},{abs(7 - l[0][1])},{abs(7 - l[1][0])},{abs(7 - l[1][1])},{self.chessgame.chessgui.promoted[1]}'
-                reply: str = client.send(data)
-                # print(f'Sent: ({data})')
-                # print(f'Reply: ({reply})')
-                # REPLY control
-                if reply == Message.RESIGN:
-                    self.state = State.OpponentResigned
-                    raise GameFinished
-                elif reply == Message.DISCONNECT:
-                    self.state = State.OpponentDisconnected
-                    raise GameFinished
-                elif reply == Message.SUGGESTDRAW:
-                    print('OPPONENT SUGGESTED DRAW')
-                    self.end_game_message('Draw by agreement', 'Do you agree for a draw?', State.AcceptedDraw)
-                    if self.state == State.AcceptedDraw:
-                        client.send(Message.ACCEPTEDDRAW)
-                        self.state = State.Draw
-                        raise GameFinished
-                elif reply == Message.ACCEPTEDDRAW:
-                    self.state = State.Draw
-                    raise GameFinished
-                # WIN/LOSE control
-                if not self.chessgame.chessgui.enable_mouse_click and self.state is State.Started:
-                    if self.chessgame.chessgui.color == 'w':
-                        self.state = State.Won if self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] == self.chessgame.chessgui.color else State.Defeated
-                    elif self.chessgame.chessgui.color == 'b':
-                        self.state = State.Won if self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] != self.chessgame.chessgui.color else State.Defeated
-                    raise GameFinished
-                # SYNCHRONIZE chessboard
-                try:
-                    op: list = reply.split(',')
-                    self.chessgame.chessgui.manual_interaction(int(op[0]), int(op[1]), int(op[2]), int(op[3]), str(op[4]))
-                    if op[6] == 'R' and self.state is State.Waiting:
-                        self.state = State.Started
-                        self.start_multiplayer_game()
-                except ValueError as error:
-                    print(f'Last reply: ({reply}), self.state: ({self.state}).')
-                    raise GameFinished
-            except GameFinished:
+            l: list = self.chessgame.chessgui.chess.last_move
+            data: str = f'{abs(7 - l[0][0])},{abs(7 - l[0][1])},{abs(7 - l[1][0])},{abs(7 - l[1][1])},{self.chessgame.chessgui.promoted[1]}'
+            reply: str = client.send(data)
+            # WIN/LOSE control
+            if not self.chessgame.chessgui.enable_mouse_click and self.state is State.Started:
+                if self.chessgame.chessgui.color == 'w':
+                    self.state = State.Won if self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] == self.chessgame.chessgui.color else State.Defeated
+                elif self.chessgame.chessgui.color == 'b':
+                    self.state = State.Won if self.chessgame.chessgui.chess.chessboard[l[1][0]][l[1][1]][0] != self.chessgame.chessgui.color else State.Defeated
                 self.chessgame.end_game()
-                if self.state.value in self.information.keys():
-                    self.information[self.state.value].show()
-                self.state = State.NoState
-                break
+                self.information[self.state.value].show()
+                if self.state is State.Defeated:
+                    break
+            # SYNCHRONIZE chessboard
+            op: list = reply.split(',')
+            try:
+                self.chessgame.chessgui.manual_interaction(int(op[0]), int(op[1]), int(op[2]), int(op[3]), str(op[4]))
+                if op[6] == 'R' and self.state is State.Waiting:
+                    self.state = State.Started
+                    self.start_multiplayer_game()
+            except ValueError:
+                self.state = State.Won
+                self.chessgame.end_game()
+                self.information[self.state.value].show()
 
 
 class TransparentScreen(QWidget):

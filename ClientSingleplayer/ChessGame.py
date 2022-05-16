@@ -31,30 +31,25 @@ class ChessGame(QWidget):
         self.timers['w'].label.hide()
         self.timers['b'].label.hide()
         self.chessgui.enable_mouse_click = True
-        print('DISABLED')
+
+    def reset_timers(self):
+        self.timers['w'].time = '10:00.00'
+        self.timers['b'].time = '10:00.00'
+        self.timers['w'].label.setText(self.timers['w'].time)
+        self.timers['b'].label.setText(self.timers['b'].time)
+        self.timers['w'].label.show()
+        self.timers['b'].label.show()
 
     def enable_timers(self):
         self.chessgui = ChessGUI(self)
-        self.timers['w'].time = '10:00.00'
-        self.timers['b'].time = '10:00.00'
-        self.timers['w'].label.setText(self.timers['w'].time)
-        self.timers['b'].label.setText(self.timers['b'].time)
-        self.timers['w'].label.show()
-        self.timers['b'].label.show()
+        self.reset_timers()
         self.start_game()
-        print('ENABLED')
 
     def reset_game(self):
         self.chessgui.enable_mouse_click = False
-        self.timers['w'].time = '10:00.00'
-        self.timers['b'].time = '10:00.00'
-        self.timers['w'].label.setText(self.timers['w'].time)
-        self.timers['b'].label.setText(self.timers['b'].time)
-        self.timers['w'].label.show()
-        self.timers['b'].label.show()
+        self.reset_timers()
         self.chessgui = ChessGUI(self)
         self.start_game()
-        print('RESET')
 
     def closeEvent(self, event):
         self.end_game()
@@ -66,11 +61,9 @@ class ChessGame(QWidget):
     def timer_control(self):
         while self.chessgui.enable_mouse_click and str_time_to_float(self.timers['b'].time) > 0 and str_time_to_float(self.timers['w'].time) > 0:
             if self.chessgui.chess.chessboard[self.chessgui.chess.last_move[1][0]][self.chessgui.chess.last_move[1][1]][0] == 'b':
-                print(f'Last: {self.chessgui.chess.chessboard[self.chessgui.chess.last_move[1][0]][self.chessgui.chess.last_move[1][1]][0]}, B pause, W resume')
                 self.timers['b'].pause()
                 self.timers['w'].resume()
             else:
-                print(f'Last: {self.chessgui.chess.chessboard[self.chessgui.chess.last_move[1][0]][self.chessgui.chess.last_move[1][1]][0]}, W pause, B resume')
                 self.timers['w'].pause()
                 self.timers['b'].resume()
             self.clock.tick(FRAMERATE)
@@ -114,12 +107,12 @@ class Timer:
     def __init__(self, label: QLabel):
         self.label: QLabel = label
         self.time: str = label.text()
-        self.state: TimerState = TimerState.Stopped
+        self.state: bool = False
         self.thread: Thread = Thread(target=lambda: self.countdown(amount=str_time_to_float(self.time)))
         self.clock: Clock = Clock()
 
     def countdown(self, amount: float = 600) -> None:
-        while amount > 0 and self.state is not TimerState.Stopped:
+        while amount > 0 and self.state:
             minutes, seconds_milliseconds = divmod(amount, 60)
             seconds, milliseconds = divmod(seconds_milliseconds, 1)
             self.label.setText('{:02.0f}:{:02.0f}.{:02.0f}'.format(minutes, seconds, milliseconds * 1000)[:TimePrecision.MinSecMilli])
@@ -131,35 +124,33 @@ class Timer:
                 self.stop()
 
     def start(self) -> None:
-        if self.state is TimerState.Started:
+        if self.state:
             return None
+        self.state = True
         print(f'Start: {self.time}, {self.label.text()}')
-        self.state = TimerState.Started
         self.thread = Thread(target=lambda: self.countdown(amount=str_time_to_float(self.time)))
         self.thread.start()
 
     def stop(self) -> None:
-        if self.state is TimerState.Stopped:
+        if not self.state:
             return None
         print(f'Stop: {self.time}, {self.label.text()}')
-        self.state = TimerState.Stopped
+        self.state = False
         try:
             self.thread.join()
         except RuntimeError:
             pass
 
     def pause(self) -> None:
-        if self.state is TimerState.Paused or self.state is TimerState:
+        if not self.state:
             return None
         print(f'Pause: {self.time}, {self.label.text()}')
-        self.state = TimerState.Paused
         self.time = self.label.text()
         self.stop()
 
     def resume(self) -> None:
-        if self.state is TimerState.Resumed or self.state is TimerState.Started:
+        if self.state:
             return None
         print(f'Resume: {self.time}, {self.label.text()}')
-        self.state = TimerState.Resumed
         self.thread: Thread = Thread(target=lambda: self.countdown(amount=str_time_to_float(self.time)))
         self.start()

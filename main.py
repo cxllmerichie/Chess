@@ -3,9 +3,8 @@
 # ToDo: voice assistant
 # ToDo: create and store log.db for singleplayer (and maybe practice/multiplayer)
 # MULTIPLAYER (threading problem)
-# ToDo: fix promotion
-# ToDo: fix draw, resign
-# ToDo: fix disconnect
+# ToDo: fix promotion (threading)
+# ToDo: disconnect, draw, resign (server&client)
 # SERVER & CLIENT
 # ToDo: self-calculating bytes amount for client and server
 # APPLICATION
