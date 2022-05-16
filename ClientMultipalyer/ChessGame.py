@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import QSize, Qt
 from Common.Library import str_time_to_float, text_label
-from Common.Constants import GAME_TIME, S, TIME_FORMAT, FRAMERATE
+from Common.Constants import GAME_TIME, S, FRAMERATE, TimePrecision
 from string import ascii_uppercase
 from ClientMultipalyer.ChessGUI import ChessGUI
 from threading import Thread
@@ -99,7 +99,7 @@ class Timer:
         while amount > 0 and self.status:
             minutes, seconds_milliseconds = divmod(amount, 60)
             seconds, milliseconds = divmod(seconds_milliseconds, 1)
-            self.label.setText('{:02.0f}:{:02.0f}.{:02.0f}'.format(minutes, seconds, milliseconds * 1000)[:TIME_FORMAT])
+            self.label.setText('{:02.0f}:{:02.0f}.{:02.0f}'.format(minutes, seconds, milliseconds * 1000)[:TimePrecision.MinSecMilli])
             self.clock.tick(100)
             amount -= 0.01
             if amount <= 0:

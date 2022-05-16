@@ -209,3 +209,10 @@ class ScreenState(Enum):
     Normal = 0
     Maximized = 1
     FullScreen = 2
+
+
+class TimerState(Enum):
+    Started = 0
+    Stopped = 1
+    Paused = 2
+    Resumed = 3

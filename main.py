@@ -8,12 +8,8 @@
 # ToDo: fix disconnect
 # SERVER & CLIENT
 # ToDo: self-calculating bytes amount for client and server
-# EXECUTABLE APPLICATION
-# ToDo: generate requirements
-# ToDo: generate executive
 # APPLICATION
 # ToDo: merge multiplayer and singleplayer clients to one (a lot of work)
-# ToDo: fix style choice from settings (maybe with moving PATH variables to separated class)
 # ToDo: configure toolbar/menubar (help, about, view(shortcuts), etc.)
 
 # from ServerClient.config import IP, PORT
