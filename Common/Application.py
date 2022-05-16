@@ -20,7 +20,7 @@ class Application(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('Chess (Pre-Alpha)')
+        self.setWindowTitle('Chess (Alpha v.1.0.2)')
         self.setWindowIcon(QIcon(ICON))
 
         self.chessgame = SChessGame(self)
@@ -103,8 +103,9 @@ class Application(QMainWindow):
     def ctrl_r(self) -> None:
         if self.state is State.PracticeWithTime or self.state is State.PracticeNoTime:
             self.chessgame.reset_game()
-        #  elif self.state is State.Started:
-        #     self.end_game_message('Resignation', 'Do you want to resign?', State.SelfResigned)
+        if self.state is State.Started:
+            if self.message_box_reply('Resignation', 'Do you want to resign?', True) == QMessageBox.Yes:
+                self.state = State.Defeated
 
     # STATUS BAR (HINT)
     def change_status_bar(self, status: str) -> None:
@@ -207,7 +208,7 @@ class Application(QMainWindow):
     def gamemode_multiplayer(self) -> None:
         try:
             client: Client = Client()
-        except:
+        except Exception:
             screen = TransparentScreen(self, False)
             self.information['connectionerror'] = app_label(StateText.ServerConnectError, QSize(self.width(), self.height()), color['connectionerror'], self)
             screen.show()
@@ -221,11 +222,7 @@ class Application(QMainWindow):
         self.chessgame.show()
         self.change_status_bar(Hint.Multiplayer)
         start_new_thread(self.connect_to_server, (client, ))
-        # Это просто п****ц а не костыль (строка 199 + строка 205): из-за того что подключение к серверу
-        # вызвано в другом треде, при ручном вызове функции ресайза инфо-лейблов в треде с подключением,
-        # фреймворк жалуется на то что родитель в другом треде,
-        # но если заресайpить окно так как это обычно происходит после вызова этого треда сразу же,
-        # он как-то идентифицирует тред и показывает инфо лейб корректно без доп. ресайза после
+        # ВНИМАНИЕ, КОСТЫЛЬ
         self.resizeEvent(QResizeEvent)
 
     # @DECORATOR
@@ -305,6 +302,9 @@ class Application(QMainWindow):
                 self.state = State.Won
                 self.chessgame.end_game()
                 self.information[self.state.value].show()
+        if self.state is State.Defeated:
+            self.chessgame.end_game()
+            self.information[self.state.value].show()
 
 
 class TransparentScreen(QWidget):

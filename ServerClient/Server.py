@@ -36,7 +36,7 @@ class Server:
         try:
             del self.data[pair_id]
             print(f'[SERVER | CLIENT HANDLER] Game(id:{pair_id}) data successfully erased from the server.')
-        except Exception as exception:
+        except Exception:
             print(f'[SERVER | CLIENT HANDLER] Failed attempt to erase game(id:{pair_id}) data. ')
         self.connections -= 1
         client.close()

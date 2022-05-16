@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import Qt, QSize
-from datetime import datetime, timedelta
 from string import ascii_lowercase
 from Common.Constants import S, FS, SOUND_PATH
 from os import path, getcwd
@@ -58,22 +57,6 @@ def image(name: str) -> str:
 
 def sound(name: str) -> str:
     return path.join(getcwd() + SOUND_PATH, name + '.mp3')
-
-
-def time() -> str:
-    return datetime.now().strftime("%H:%M:%S")
-
-
-def date() -> str:
-    return datetime.now().strftime("%Y-%m-%d")
-
-
-def duration(start: float, end: float) -> str:
-    return str(timedelta(seconds=int(end-start)))
-
-
-def line(length: int, symbol: str = '-') -> str:
-    return symbol * length + '\n'
 
 
 def set_exists(_set: set) -> set:

@@ -78,15 +78,15 @@ class ChessGame(QWidget):
 
     def buttons(self):
         game_btn('Draw by agreement', (S, S * 9 + S / 2, S * 2, S / 4),
-                   lambda: self.end_game_message(QMessageBox.Question, 'Draw by agreement', 'Do you agree for a draw?'), self)
+                 lambda: self.end_game_message(QMessageBox.Question, 'Draw by agreement', 'Do you agree for a draw?'), self)
         game_btn('Resign', (S, S * 9 + S / 2 + S / 4, S * 2, S / 4),
-                   lambda: self.end_game_message(QMessageBox.Warning, 'Resignation', 'Do you want to resign?'), self)
+                 lambda: self.end_game_message(QMessageBox.Warning, 'Resignation', 'Do you want to resign?'), self)
         game_btn('VolumeUp', (S * 9, S * 9 + S / 4, S, S / 4),
-                   lambda: self.chessgui.audio_player.setVolume(self.chessgui.audio_player.volume() + 10), self)
+                 lambda: self.chessgui.audio_player.setVolume(self.chessgui.audio_player.volume() + 10), self)
         game_btn('VolumeDown', (S * 9, S * 10 - S / 2, S, S / 4),
-                   lambda: self.chessgui.audio_player.setVolume(self.chessgui.audio_player.volume() - 10), self)
+                 lambda: self.chessgui.audio_player.setVolume(self.chessgui.audio_player.volume() - 10), self)
         game_btn('Mute', (S * 9, S * 10 - S / 4, S, S / 4),
-                   lambda: self.chessgui.audio_player.setVolume(0 if self.chessgui.audio_player.volume() != 0 else 100), self)
+                 lambda: self.chessgui.audio_player.setVolume(0 if self.chessgui.audio_player.volume() != 0 else 100), self)
 
     def end_game_message(self, icon_type, title: str, text: str) -> None:
         msg = QMessageBox()

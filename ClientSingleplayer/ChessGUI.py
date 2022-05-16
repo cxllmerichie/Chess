@@ -11,7 +11,6 @@ move_buffer, check_buffer, position_buffer, capture_buffer = [], [], [], []
 
 
 class ChessGUI(QWidget):
-    #def __init__(self, parent_window: QWidget, log_file):
     def __init__(self, parent_window: QWidget):
         super(ChessGUI, self).__init__(parent=parent_window)
         self.audio_player = QMediaPlayer()
@@ -20,7 +19,6 @@ class ChessGUI(QWidget):
 
         self.chess: ChessLogic = ChessLogic()
         self.label: Label = Label(self, self.chess)
-        #self.log_file = log_file
         self.turn: int = 1
         self.color = '?'
 
@@ -36,7 +34,7 @@ class ChessGUI(QWidget):
         if self.color == 'w' and self.turn % 2 != 1:
             return None
         elif self.color == 'b' and self.turn % 2 != 0:
-                return None
+            return None
         if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // S][click.x() // S] == '--'):
             if not (len(move_buffer) == 0 and self.chess.chessboard[click.y() // S][click.x() // S][0] == self.chess.chessboard[self.chess.last_move[1][0]][self.chess.last_move[1][1]][0]):
                 move_buffer.append([click.y() // S, click.x() // S])
@@ -84,7 +82,6 @@ class ChessGUI(QWidget):
                 if not captured and not promoted:
                     self.is_en_passant()
             self.move_piece()
-            #self.update_log()
             return True
         move_buffer.clear()
         return False

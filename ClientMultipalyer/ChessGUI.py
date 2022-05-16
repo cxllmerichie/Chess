@@ -5,7 +5,6 @@ from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from ClientMultipalyer.ChessLogic import ChessLogic, DEFAULT_MOVE
 from Common.Library import exist, image_label, sound, operate, convert, image
 from Common.Constants import S
-from time import sleep
 
 
 x1 = y1 = x2 = y2 = 0
@@ -64,29 +63,19 @@ class ChessGUI(QWidget):
         x2, y2 = move_buffer[1][0], move_buffer[1][1]
         self.fill_buffers()
         self.label.show_indicators()
-        is_moved: bool = self.manual_move_action(promotion_piece)
+        is_moved: bool = self.manual_move_action()
         self.label.hide_indicators()
         if promotion_piece != '  ' and self.chess.chessboard[_x2][_y2] != promotion_piece:
-            # promotion_piece = 'b' + promotion_piece[1] if promotion_piece[0] == 'w' else 'w' + promotion_piece[1]
             self.label.pieces[_x2][_y2].hide()
-            if self.color == 'b':
-                self.chess.chessboard[_x2][_y2] = 'b'+promotion_piece[1]
-            else:
-                self.chess.chessboard[_x2][_y2] = promotion_piece
+            self.chess.chessboard[_x2][_y2] = 'b'+promotion_piece[1] if self.color == 'b' else promotion_piece
             self.label.pieces[_x2][_y2].setPixmap(QPixmap(image(promotion_piece)).scaled(S, S, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-            # self.label.pieces[_x2][_y2].move(_y2*S, _x2*S)
-            # self.label.pieces[_x2][_y2].resize(S, S)
             self.label.pieces[_x2][_y2].show()
-            # self.end_game_procedures()
-            # self.window.label.pieces[self.x][self.y] = image_label(self.y * S, self.x * S, S, S, _piece, self.window)
+            self.label.pieces[_x1][_y1] = '--'
         self.end_game_procedures()
         if is_moved:
             self.turn += 1
             self.chess.last_move = [(x1, y1), (x2, y2)]
             self.play_sound(self.sound)
-
-    def resizeEvent(self, event) -> None:
-        pass
 
     # @DECORATOR
     def eventFilter(self, obj, event) -> bool:
@@ -124,14 +113,13 @@ class ChessGUI(QWidget):
         move_buffer.clear()
         return False
 
-    def manual_move_action(self, promotion_piece: str) -> bool:
+    def manual_move_action(self) -> bool:
         if (x2, y2) in position_buffer or (x2, y2) in capture_buffer:
             self.sound = 'move'
             castling = self.is_castling() if self.color == 'w' else self.manual_is_castling()
             if not castling:
                 captured: bool = self.is_capture()
-                # promoted: bool = self.is_promotion()
-                if not captured:  # and not promoted:
+                if not captured:
                     self.is_en_passant()
             self.move_piece()
             return True
@@ -141,11 +129,10 @@ class ChessGUI(QWidget):
     def is_promotion(self) -> bool:
         if self.chess.chessboard[x1][y1][1] == 'p':
             if (self.chess.chessboard[x1][y1][0] == 'w' and x2 == 0) or (self.chess.chessboard[x1][y1][0] == 'b' and x2 == 7):
-                # self.enable_mouse_click = False
                 if self.color == 'w':
                     Promotion(self, (x2, y2), self.chess.chessboard[x1][y1]).show()
                 elif self.color == 'b':
-                    BlackPromotion(self, (x2, y2), self.chess.chessboard[x1][y1]).show()
+                    BlackPromotion(self, (x2, y2)).show()
                 self.sound = 'castling'
                 self.promoted[0] = True
                 return True
@@ -274,7 +261,7 @@ class ChessGUI(QWidget):
 
 
 class BlackPromotion(QWidget):
-    def __init__(self, _window: ChessGUI, position: tuple, piece: str):
+    def __init__(self, _window: ChessGUI, position: tuple):
         self.window: ChessGUI = _window
         self.x = position[0]
         self.y = position[1]
