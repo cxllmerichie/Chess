@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut, QWidget, QCheckBox, QComboBox, QLineEdit, QPushButton
+from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut, QWidget, QCheckBox, QComboBox, QLineEdit, \
+    QPushButton, QListWidget, QListWidgetItem
 from PyQt5.QtGui import QPixmap, QFont, QKeySequence, QResizeEvent, QIcon, QIntValidator
 from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON, S, FRAMERATE
 from Common.Library import app_btn, app_label, color, Hint, State, StateText, ScreenState, set_pieces, set_chessboard
@@ -11,8 +12,9 @@ from contextlib import redirect_stdout
 with redirect_stdout(None):
     from pygame.time import Clock
 from os import listdir
-from time import sleep
 from sys import exit
+
+movelist: dict = {}
 
 
 class Application(QMainWindow):
@@ -33,12 +35,49 @@ class Application(QMainWindow):
         self.information: dict = self.create_information()
         self.show_menu_buttons()
         self.shortcuts()
+        self.movelist: QListWidget = self.create_movelist()
 
         self.setMinimumSize(S*10, S*10)
         self.move(SW / 2 - self.width() / 2, SH / 2 - self.height() / 2)
         self.settings: TransparentScreen = TransparentScreen(self)
         self.last_screen_state: ScreenState = ScreenState.Normal
         self.showNormal()
+
+    # MOVE LIST
+    def practice_movetracker(self):
+        global movelist
+        s: list = self.chessgame.chessgui.chess.square_names
+        while True:
+            if self.state is State.NoState or self.state is State.Won or self.state is State.Defeated:
+                break
+            l: list = self.chessgame.chessgui.chess.last_move.copy()
+            if l[0] != l[1]:
+                b: list = self.chessgame.chessgui.chess.chessboard.copy()
+                movelist[self.chessgame.chessgui.turn-1] = f'{self.chessgame.chessgui.turn-1}.  {b[l[1][0]][l[1][1]]}  {s[l[0][0]][l[0][1]]} -> {s[l[1][0]][l[1][1]]}'
+                if len(movelist) != self.movelist.count():
+                    try:
+                        self.movelist.clear()
+                    except RuntimeError:
+                        pass
+                    for key in sorted(movelist):
+                        self.movelist.addItem(QListWidgetItem(movelist[key]))
+            self.clock.tick(10)
+            try:
+                self.movelist.scrollToBottom()
+            except RuntimeError:
+                pass
+
+    def create_movelist(self) -> QListWidget:
+        _list: QListWidget = QListWidget(self)
+        _list.setFont(QFont('Arial', FS/2))
+        _list.setStyleSheet('background-color: rgba(46, 46, 46, 255); color: gray; border: 2px solid gray;')
+        _list.setWindowFlag(Qt.WindowStaysOnTopHint)
+        _list.setFixedSize(QSize(S*1.5, S*8))
+        _list.move(self.width()/2 * S*5, self.height()/2+S*5)
+        _list.verticalScrollBar().setStyleSheet("QScrollBar {height:0px;}")
+        _list.horizontalScrollBar().setStyleSheet("QScrollBar {height:0px;}")
+        _list.hide()
+        return _list
 
     # BACKGROUND
     def create_background(self) -> QLabel:
@@ -103,6 +142,9 @@ class Application(QMainWindow):
     def ctrl_r(self) -> None:
         if self.state is State.PracticeWithTime or self.state is State.PracticeNoTime:
             self.chessgame.reset_game()
+            global movelist
+            movelist.clear()
+            self.movelist.clear()
         if self.state is State.Started:
             if self.message_box_reply('Resignation', 'Do you want to resign?', True) == QMessageBox.Yes:
                 self.state = State.Defeated
@@ -149,6 +191,10 @@ class Application(QMainWindow):
 
     # MENU
     def return_to_menu_procedure(self) -> None:
+        global movelist
+        movelist.clear()
+        self.movelist.hide()
+        self.movelist.clear()
         self.settings.hide()
         self.hide_information()
         self.change_status_bar(Hint.Menu)
@@ -195,15 +241,12 @@ class Application(QMainWindow):
         self.state = State.PracticeWithTime
         self.hide_menu_buttons()
         self.change_background(GAME_BACKGROUND)
+        start_new_thread(self.practice_movetracker, ())
         self.chessgame = SChessGame(self)
         self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
         self.chessgame.show()
+        self.movelist.show()
         self.chessgame.start_game()
-
-    def connection_error(self, screen):
-        sleep(3)
-        self.information['connectionerror'].hide()
-        screen.hide()
 
     def gamemode_multiplayer(self) -> None:
         try:
@@ -217,9 +260,11 @@ class Application(QMainWindow):
             return None
         self.state = State.Waiting
         self.show_waiting_screen()
+        start_new_thread(self.practice_movetracker, ())
         self.chessgame = MChessGame(self, client.receive()[11])
         self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
         self.chessgame.show()
+        self.movelist.show()
         self.change_status_bar(Hint.Multiplayer)
         start_new_thread(self.connect_to_server, (client, ))
         # ВНИМАНИЕ, КОСТЫЛЬ
@@ -235,11 +280,12 @@ class Application(QMainWindow):
 
     # @DECORATOR
     def resizeEvent(self, event):
-        self.resize_menu_buttons()
         self.resize_background()
+        self.resize_menu_buttons()
         self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
         self.set_status_bar()
         self.resize_information()
+        self.movelist.move(self.width()/2+S*5, self.chessgame.y()+S)
         self.settings.resizeEvent(QResizeEvent)
 
     # PRACTICE PROCEDURES
@@ -250,10 +296,27 @@ class Application(QMainWindow):
         elif self.state is State.PracticeNoTime:
             self.chessgame.enable_timers()
             self.state = State.PracticeWithTime
+            global movelist
+            movelist.clear()
+            self.movelist.clear()
 
     # MULTIPLAYER PROCEDURES
     def suggest_draw(self) -> None:
         self.state = State.SuggestedDraw
+
+    def message_box_reply(self, title: str, question: str, asking: bool):
+        if asking:
+            return QMessageBox().question(self, title, question, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        return QMessageBox.Yes
+
+    def connection_error(self, screen):
+        amount: float = 0
+        while amount < 3 and screen.isVisible():
+            screen.resizeEvent(QResizeEvent)
+            self.clock.tick(100)
+            amount += 0.01
+        self.information['connectionerror'].hide()
+        screen.hide()
 
     def show_waiting_screen(self) -> None:
         self.hide_menu_buttons()
@@ -263,11 +326,6 @@ class Application(QMainWindow):
     def start_multiplayer_game(self) -> None:
         self.information['waiting'].hide()
         self.chessgame.start_game()
-
-    def message_box_reply(self, title: str, question: str, asking: bool):
-        if asking:
-            return QMessageBox().question(self, title, question, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        return QMessageBox.Yes
 
     def connect_to_server(self, client: Client) -> None:
         while self.state is State.Waiting or self.state is State.Started:

@@ -144,10 +144,10 @@ def convert(_list: list) -> list:
 
 
 class Hint:
-    Singleplayer = '[Ctrl+R] start new game, [Ctrl+M] return to menu.'
+    # Singleplayer = '[Ctrl+R] start new game, [Ctrl+M] return to menu.'
     Practice = '[Ctrl+R] reset the game, [Ctrl+T] enable timers reseting the game/disable timers, [Ctrl+M] return to menu, [Ctrl+H] show/hide this hint.'
-    Multiplayer = '[Ctrl+R] resign, [Ctrl+D] suggest draw, [Ctrl+M] return to menu, [Ctrl+H] show/hide this hint.'
-    Menu = '[F9, F10, F11] minimize/maximize/full screen mode, [Ctrl+S] show/hide settings menu, [Ctrl+E] exit, [Ctrl+H] show/hide this hint.'
+    Multiplayer = '[Ctrl+R] resign, [Ctrl+M] return to menu, [Ctrl+H] show/hide this hint.'
+    Menu = '[F9, F10, F11] minimize/maximize/full screen mode, [Ctrl+S] open/close settings, [Ctrl+E] exit, [Ctrl+H] show/hide this hint.'
     Settings = ''
 
 
