@@ -3,9 +3,13 @@ from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut, QWidget
     QPushButton, QListWidget, QListWidgetItem
 from PyQt5.QtGui import QPixmap, QFont, QKeySequence, QResizeEvent, QIcon, QIntValidator
 from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON, S, FRAMERATE
-from Common.Library import app_btn, app_label, color, Hint, State, StateText, ScreenState, set_pieces, set_chessboard
+from Common.Library import app_btn, app_label, color, Hint, State, StateText, ScreenState, set_pieces, set_chessboard, set_indicators
 from ClientMultipalyer.ChessGame import ChessGame as MChessGame
+from ClientMultipalyer.ChessGame import set_time as m_set_time
+from ClientMultipalyer.ChessGame import set_time_precision as m_set_time_precision
 from ClientSingleplayer.ChessGame import ChessGame as SChessGame
+from ClientSingleplayer.ChessGame import set_time as s_set_time
+from ClientSingleplayer.ChessGame import set_time_precision as s_set_time_precision
 from ServerClient.Client import Client, set_ip, set_port
 from _thread import start_new_thread
 from contextlib import redirect_stdout
@@ -213,7 +217,7 @@ class Application(QMainWindow):
     # MENU BUTTONS
     def create_menu_buttons(self) -> list:
         return [
-            app_btn('Play vs Computer', (self.width() / 2 - BW / 2, self.height() / 2 - BH, BW, BH), lambda: None, self),
+            app_btn('Play vs Computer\n(currently unavailable)', (self.width() / 2 - BW / 2, self.height() / 2 - BH, BW, BH), lambda: None, self, int(FS/1.4)),
             app_btn('Play vs Player', (self.width() / 2 - BW / 2, self.height() / 2, BW, BH), lambda: self.gamemode_multiplayer(), self),
             app_btn('Practice', (self.width() / 2 - BW / 2, self.height() / 2 + BH, BW, BH), lambda: self.gamemode_practice(), self),
             app_btn('Settings', (self.width() / 2 - BW / 2, self.height() / 2 + BH * 2, BW, BH), lambda: self.settings.show(), self),
@@ -260,11 +264,11 @@ class Application(QMainWindow):
             return None
         self.state = State.Waiting
         self.show_waiting_screen()
-        start_new_thread(self.practice_movetracker, ())
+        # start_new_thread(self.practice_movetracker, ())
         self.chessgame = MChessGame(self, client.receive()[11])
         self.chessgame.move(int(self.width() / 2 - self.chessgame.width() / 2), int(self.height() / 2 - self.chessgame.height() / 2))
         self.chessgame.show()
-        self.movelist.show()
+        # self.movelist.show()
         self.change_status_bar(Hint.Multiplayer)
         start_new_thread(self.connect_to_server, (client, ))
         # ВНИМАНИЕ, КОСТЫЛЬ
@@ -287,6 +291,7 @@ class Application(QMainWindow):
         self.resize_information()
         self.movelist.move(self.width()/2+S*5, self.chessgame.y()+S)
         self.settings.resizeEvent(QResizeEvent)
+        self.settings.setWindowFlag(Qt.WindowStaysOnTopHint)
 
     # PRACTICE PROCEDURES
     def timer_control(self) -> None:
@@ -404,10 +409,16 @@ class Settings(QWidget):
         self.combobox_chessboard: QComboBox = self.create_combobox('Chessboard: ', 'Assets/Images/Chessboard/', self.combobox_pieces.height())
         self.combobox_chessboard.setCurrentText('standard')
 
-        self.textbox_ip: QLineEdit = self.create_textbox('Server IP:', '127.0.0.1', self.combobox_chessboard.height()*2)
+        self.combobox_indicators: QComboBox = self.create_combobox('Indicators: ', 'Assets/Images/Indicators/', self.combobox_chessboard.height()*2)
+        self.combobox_indicators.setCurrentText('standard')
+
+        self.textbox_time: QLineEdit = self.create_textbox('Time:', '10:00:00', self.combobox_chessboard.height() * 3)
+        self.textbox_time.setInputMask('00:00.00')
+
+        self.textbox_ip: QLineEdit = self.create_textbox('Server IP:', '127.0.0.1', self.combobox_chessboard.height()*5)
         self.textbox_ip.setInputMask('000.000.000.000')
 
-        self.textbox_port: QLineEdit = self.create_textbox('Server PORT:', '5555', self.textbox_ip.height()*3)
+        self.textbox_port: QLineEdit = self.create_textbox('Server PORT:', '5555', self.textbox_ip.height()*6)
         self.textbox_port.setValidator(QIntValidator())
 
         self.button_save: QPushButton = self.create_button_save('Save', 0, S/2, FS, True, lambda: (self.save(), self.parent.hide()))
@@ -422,19 +433,23 @@ class Settings(QWidget):
             button.setStyleSheet('background-color: transparent; border: 1px solid gray; color: white;')
         button.setFont(QFont('Arial', fs))
         button.setFixedSize(S*4.5, h)
-        button.move(self.width()/2-button.width()/2, S*4+height_shift)
+        button.move(self.width()/2-button.width()/2, S*5+height_shift)
         button.clicked.connect(function)
         return button
 
     def save(self):
         set_pieces(self.combobox_pieces.currentText())
         set_chessboard(self.combobox_chessboard.currentText())
+        set_indicators(self.combobox_indicators.currentText())
+        s_set_time(self.textbox_time.text())
         set_ip(self.textbox_ip.text())
         set_port(self.textbox_port.text())
 
     def reset(self):
         self.combobox_pieces.setCurrentText('standard')
         self.combobox_chessboard.setCurrentText('standard')
+        self.combobox_indicators.setCurrentText('standard')
+        self.textbox_time.setText('10:00.00')
         self.textbox_ip.setText('127.0.0.1')
         self.textbox_port.setText('5555')
         self.save()

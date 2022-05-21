@@ -2,18 +2,11 @@ from pyautogui import size
 from typing import Final
 
 
-class TimePrecision:
-    Min = 2
-    MinSec = 5
-    MinSecMilli = 8
-
-
 COEFFICIENT: Final = 15
 SW, SH = size().width, size().height  # screen width & screen height
 S: Final = int(SH / COEFFICIENT // 10 * 10) if SH < SW else int(SW / COEFFICIENT // 10 * 10)  # square size (label size)
 FS: Final = int(S / 4)  # general font size
 FRAMERATE: Final = 200
-GAME_TIME: Final = '10:00.00'
 BH: Final = 50  # button height
 BW: Final = 300  # button width
 

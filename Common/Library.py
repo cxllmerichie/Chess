@@ -6,6 +6,7 @@ from Common.Constants import S, FS, SOUND_PATH
 from os import path, getcwd
 from enum import Enum
 import operator
+from typing import Final
 
 CHESSBOARD_STYLE: str = 'standard'
 CHESSBOARD_PATH: str = f'Assets/Images/Chessboard/{CHESSBOARD_STYLE}/'
@@ -13,10 +14,28 @@ CHESSBOARD_PATH: str = f'Assets/Images/Chessboard/{CHESSBOARD_STYLE}/'
 # Canonical: cardinal chessnut fresca icpieces kosal merida
 # Specific: fantasy pirouetti riohacha spatial
 # Strange but interesting: horsey letter shapes
-PIECE_STYLE: str = 'standardhd'
+PIECE_STYLE: str = 'standard'
 PIECE_PATH: str = f'Assets/Images/Pieces/{PIECE_STYLE}/'
-INDICATOR_STYLE: str = 'standardhd'
+INDICATOR_STYLE: str = 'standard'
 INDICATOR_PATH: str = f'Assets/Images/Indicators/{INDICATOR_STYLE}/'
+
+
+def set_pieces(style: str):
+    global PIECE_STYLE, PIECE_PATH
+    PIECE_STYLE = style
+    PIECE_PATH = f'Assets/Images/Pieces/{PIECE_STYLE}/'
+
+
+def set_chessboard(style: str):
+    global CHESSBOARD_STYLE, CHESSBOARD_PATH
+    CHESSBOARD_STYLE = style
+    CHESSBOARD_PATH = f'Assets/Images/Chessboard/{CHESSBOARD_STYLE}/'
+
+
+def set_indicators(style: str):
+    global INDICATOR_STYLE, INDICATOR_PATH
+    INDICATOR_STYLE = style
+    INDICATOR_PATH = f'Assets/Images/Indicators/{INDICATOR_STYLE}/'
 
 
 def operate(left: int, _operator: str, right: int):
@@ -30,18 +49,6 @@ def exists(coordinate: int, start: int = 0, end: int = 8) -> bool:
 
 def exist(coordinates: tuple, start: int = 0, end: int = 8) -> bool:
     return start <= coordinates[0] < end and start <= coordinates[1] < end
-
-
-def set_pieces(style: str):
-    global PIECE_STYLE, PIECE_PATH
-    PIECE_STYLE = style
-    PIECE_PATH = f'Assets/Images/Pieces/{PIECE_STYLE}/'
-
-
-def set_chessboard(style: str):
-    global CHESSBOARD_STYLE, CHESSBOARD_PATH
-    CHESSBOARD_STYLE = style
-    CHESSBOARD_PATH = f'Assets/Images/Chessboard/{CHESSBOARD_STYLE}/'
 
 
 def image(name: str) -> str:
@@ -108,11 +115,11 @@ def game_btn(title: str, geometry: tuple, click, window: QWidget) -> QPushButton
     return button
 
 
-def app_btn(title: str, geometry: tuple, click, window: QWidget) -> QPushButton:
+def app_btn(title: str, geometry: tuple, click, window: QWidget, font_size: int = int(FS/1.1)) -> QPushButton:
     button = QPushButton(title, parent=window)
     button.setGeometry(geometry[0], geometry[1], geometry[2], geometry[3])
     button.setStyleSheet('QPushButton {background-color: #323232; color: white; font-weight: bold;}')
-    button.setFont(QFont('Helvetica', int(FS/1.1)))
+    button.setFont(QFont('Helvetica', font_size))
     button.clicked.connect(click)
     button.hide()
     return button

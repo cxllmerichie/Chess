@@ -1,13 +1,34 @@
 from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import QSize, Qt
 from Common.Library import str_time_to_float, text_label
-from Common.Constants import GAME_TIME, S, FRAMERATE, TimePrecision
+from Common.Constants import  S, FRAMERATE
 from string import ascii_uppercase
 from ClientMultipalyer.ChessGUI import ChessGUI
 from threading import Thread
 from contextlib import redirect_stdout
 with redirect_stdout(None):
     from pygame.time import Clock
+
+
+class TimePrecision:
+    Min = 2
+    MinSec = 5
+    MinSecMilli = 8
+
+
+TIME_PRECISION: int = TimePrecision.MinSecMilli
+GAME_TIME: str = '10:00.00'
+
+
+def set_time(_time: str):
+    global GAME_TIME
+    print(f'New time: {_time}')
+    GAME_TIME = _time
+
+
+def set_time_precision(time_precision: int):
+    global TIME_PRECISION
+    TIME_PRECISION = time_precision
 
 
 class ChessGame(QWidget):
@@ -102,7 +123,7 @@ class Timer:
         while amount > 0 and self.status:
             minutes, seconds_milliseconds = divmod(amount, 60)
             seconds, milliseconds = divmod(seconds_milliseconds, 1)
-            self.label.setText('{:02.0f}:{:02.0f}.{:02.0f}'.format(minutes, seconds, milliseconds * 1000)[:TimePrecision.MinSecMilli])
+            self.label.setText('{:02.0f}:{:02.0f}.{:02.0f}'.format(minutes, seconds, milliseconds * 1000)[:TIME_PRECISION])
             self.clock.tick(100)
             amount -= 0.01
             if amount <= 0:

@@ -155,8 +155,18 @@ class ChessGUI(QWidget):
     def end_game_procedures(self) -> bool:
         if self.checkmate() or self.stalemate():
             self.enable_mouse_click = False
+            self.clear_buffers()
             return True
         return self.check()
+
+    @staticmethod
+    def clear_buffers():
+        global move_buffer, check_buffer, capture_buffer, position_buffer, x1, x2, y1, y2
+        move_buffer.clear()
+        check_buffer.clear()
+        capture_buffer.clear()
+        position_buffer.clear()
+        x1 = x2 = y1 = y2 = 0
 
     def check_for(self, piece: str) -> None:
         global check_buffer
