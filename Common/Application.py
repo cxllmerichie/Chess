@@ -2,7 +2,7 @@ from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtWidgets import QLabel, QMessageBox, QMainWindow, QShortcut, QWidget, QCheckBox, QComboBox, QLineEdit, \
     QPushButton, QListWidget, QListWidgetItem
 from PyQt5.QtGui import QPixmap, QFont, QKeySequence, QResizeEvent, QIcon, QIntValidator
-from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON, S, FRAMERATE
+from Common.Constants import BH, BW, SW, SH, MENU_BACKGROUND, GAME_BACKGROUND, FS, ICON, S, FRAMERATE, PATH_PREFIX
 from Common.Library import app_btn, app_label, color, Hint, State, StateText, ScreenState, set_pieces, set_chessboard, set_indicators
 from ClientMultipalyer.ChessGame import ChessGame as MChessGame
 from ClientMultipalyer.ChessGame import set_time as m_set_time
@@ -403,13 +403,13 @@ class Settings(QWidget):
 
         self.create_main_label()
         # self.checkbox: QCheckBox = self.create_checkbox()
-        self.combobox_pieces: QComboBox = self.create_combobox('Pieces: ', 'Assets/Images/Pieces/', 0)
+        self.combobox_pieces: QComboBox = self.create_combobox('Pieces: ', PATH_PREFIX + 'Assets/Images/Pieces/', 0)
         self.combobox_pieces.setCurrentText('standard')
 
-        self.combobox_chessboard: QComboBox = self.create_combobox('Chessboard: ', 'Assets/Images/Chessboard/', self.combobox_pieces.height())
+        self.combobox_chessboard: QComboBox = self.create_combobox('Chessboard: ', PATH_PREFIX + 'Assets/Images/Chessboard/', self.combobox_pieces.height())
         self.combobox_chessboard.setCurrentText('standard')
 
-        self.combobox_indicators: QComboBox = self.create_combobox('Indicators: ', 'Assets/Images/Indicators/', self.combobox_chessboard.height()*2)
+        self.combobox_indicators: QComboBox = self.create_combobox('Indicators: ', PATH_PREFIX + 'Assets/Images/Indicators/', self.combobox_chessboard.height() * 2)
         self.combobox_indicators.setCurrentText('standard')
 
         self.textbox_time: QLineEdit = self.create_textbox('Time:', '10:00:00', self.combobox_chessboard.height() * 3)

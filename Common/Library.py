@@ -2,40 +2,40 @@ from PyQt5.QtWidgets import QWidget, QLabel, QPushButton
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtCore import Qt, QSize
 from string import ascii_lowercase
-from Common.Constants import S, FS, SOUND_PATH
+from Common.Constants import S, FS, SOUND_PATH, PATH_PREFIX
 from os import path, getcwd
 from enum import Enum
 import operator
-from typing import Final
+
 
 CHESSBOARD_STYLE: str = 'standard'
-CHESSBOARD_PATH: str = f'Assets/Images/Chessboard/{CHESSBOARD_STYLE}/'
+CHESSBOARD_PATH: str = f'{PATH_PREFIX}Assets/Images/Chessboard/{CHESSBOARD_STYLE}/'
 # Standard: standard
 # Canonical: cardinal chessnut fresca icpieces kosal merida
 # Specific: fantasy pirouetti riohacha spatial
 # Strange but interesting: horsey letter shapes
 PIECE_STYLE: str = 'standard'
-PIECE_PATH: str = f'Assets/Images/Pieces/{PIECE_STYLE}/'
+PIECE_PATH: str = f'{PATH_PREFIX}Assets/Images/Pieces/{PIECE_STYLE}/'
 INDICATOR_STYLE: str = 'standard'
-INDICATOR_PATH: str = f'Assets/Images/Indicators/{INDICATOR_STYLE}/'
+INDICATOR_PATH: str = f'{PATH_PREFIX}Assets/Images/Indicators/{INDICATOR_STYLE}/'
 
 
 def set_pieces(style: str):
     global PIECE_STYLE, PIECE_PATH
     PIECE_STYLE = style
-    PIECE_PATH = f'Assets/Images/Pieces/{PIECE_STYLE}/'
+    PIECE_PATH = f'{PATH_PREFIX}Assets/Images/Pieces/{PIECE_STYLE}/'
 
 
 def set_chessboard(style: str):
     global CHESSBOARD_STYLE, CHESSBOARD_PATH
     CHESSBOARD_STYLE = style
-    CHESSBOARD_PATH = f'Assets/Images/Chessboard/{CHESSBOARD_STYLE}/'
+    CHESSBOARD_PATH = f'{PATH_PREFIX}Assets/Images/Chessboard/{CHESSBOARD_STYLE}/'
 
 
 def set_indicators(style: str):
     global INDICATOR_STYLE, INDICATOR_PATH
     INDICATOR_STYLE = style
-    INDICATOR_PATH = f'Assets/Images/Indicators/{INDICATOR_STYLE}/'
+    INDICATOR_PATH = f'{PATH_PREFIX}Assets/Images/Indicators/{INDICATOR_STYLE}/'
 
 
 def operate(left: int, _operator: str, right: int):

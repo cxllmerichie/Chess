@@ -1,8 +1,8 @@
 from socket import AF_INET, SOCK_STREAM, socket, error
 from threading import Thread, active_count
 from config import ENCODING, DEFAULT, BYTES, CONNECTION_LIMIT
-from ServerClient.Client import IP, PORT
 import random
+from Client import IP, PORT
 
 
 class Server:
@@ -14,7 +14,7 @@ class Server:
             self.server.bind((IP, PORT))
             print(f'[SERVER] Server started at {IP, PORT}.')
         except error as socket_error:
-            print(f'[SERVER | CLIENT HANDLER] Error. (orig: {str(socket_error)})')
+            print(f'[SERVER] Error. (orig: {str(socket_error)})')
 
     def client(self, client: socket, player_id: int, pair_id: int, address) -> None:
         client.send(str.encode(self.data[pair_id][player_id]))
@@ -36,7 +36,7 @@ class Server:
         try:
             del self.data[pair_id]
             print(f'[SERVER | CLIENT HANDLER] Game(id:{pair_id}) data successfully erased from the server.')
-        except Exception:
+        except Exception as exception:
             print(f'[SERVER | CLIENT HANDLER] Failed attempt to erase game(id:{pair_id}) data. ')
         self.connections -= 1
         client.close()

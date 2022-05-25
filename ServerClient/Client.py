@@ -1,7 +1,7 @@
 from socket import AF_INET, SOCK_STREAM, socket, error
 from ServerClient.config import ENCODING, BYTES
 
-IP: str = '127.0.0.1'
+IP: str = '192.168.82.96'
 PORT: int = 5555
 
 
