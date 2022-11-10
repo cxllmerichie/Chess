@@ -13,7 +13,7 @@
 # ToDo: configure toolbar/menubar (help, about, view(shortcuts), etc.)
 
 from PyQt5.QtWidgets import QApplication
-from Common.Application import Application
+from src.Common.Application import Application
 from sys import argv
 
 
