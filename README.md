@@ -1,6 +1,6 @@
-# Chess Desktop
-# Overview
-# Install
-- ### Installer: Chess/Chess.exe
-- ### Executable: Chess/Chess/Chess.exe, move together with Assets folder
-# Documentation
+# Chess Desktop x64
+## Overview
+## Install
+- ### Install with: Chess/Chess.exe file
+- ### Download: Chess/Chess folder
+## Documentation
